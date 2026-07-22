@@ -44,16 +44,21 @@ jq -c '.inbounds[]' "$CONFIG_FILE" | while read -r inbound; do
     pass=$(echo "$inbound" | jq -r '.users[0].password // ""')
     sni=$(echo "$inbound" | jq -r '.tls.server_name // "yahoo.com"')
     pbk=$(echo "$inbound" | jq -r '.users[0].public_key // .tls.reality.public_key // ""')
+    sid=$(echo "$inbound" | jq -r '.tls.reality.short_id[0] // ""')
 
     echo -e "${GREEN}[Node $COUNT] $name ($type - Port: $port):${NC}"
 
     case "$type" in
         vless)
-            if [ -z "$pbk" ]; then
-                echo -e "${CYAN}vless://${uuid}@${SERVER_IP}:${port}?type=grpc&security=reality&fp=chrome&sni=${sni}&serviceName=vless-grpc#${name}${NC}"
-            else
-                echo -e "${CYAN}vless://${uuid}@${SERVER_IP}:${port}?type=grpc&security=reality&pbk=${pbk}&fp=chrome&sni=${sni}&serviceName=vless-grpc#${name}${NC}"
+            VLESS_LINK="vless://${uuid}@${SERVER_IP}:${port}?type=grpc&security=reality&fp=chrome&sni=${sni}"
+            if [ -n "$pbk" ]; then
+                VLESS_LINK="${VLESS_LINK}&pbk=${pbk}"
             fi
+            if [ -n "$sid" ]; then
+                VLESS_LINK="${VLESS_LINK}&sid=${sid}"
+            fi
+            VLESS_LINK="${VLESS_LINK}&serviceName=vless-grpc#${name}"
+            echo -e "${CYAN}${VLESS_LINK}${NC}"
             ;;
         hysteria2)
             echo -e "${CYAN}hysteria2://${pass}@${SERVER_IP}:${port}?sni=${sni}&insecure=1#${name}${NC}"
