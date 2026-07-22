@@ -4,6 +4,7 @@
 INSTALL_DIR="/usr/local/singbox-manager"
 source "$INSTALL_DIR/lib/color.sh"
 CONFIG_FILE="$INSTALL_DIR/config/config.json"
+KEYS_FILE="$INSTALL_DIR/config/public_keys.json"
 
 if [ ! -f "$CONFIG_FILE" ]; then
     echo -e "${RED}Lỗi: Chưa tìm thấy file cấu hình config.json${NC}"
@@ -41,8 +42,13 @@ echo "$USERNAMES" | while read -r username; do
         uuid=$(echo "$inbound" | jq -r '.users[0].uuid // ""')
         pass=$(echo "$inbound" | jq -r '.users[0].password // ""')
         sni=$(echo "$inbound" | jq -r '.tls.server_name // "yahoo.com"')
-        pbk=$(echo "$inbound" | jq -r '.users[0].public_key // .tls.reality.public_key // ""')
         sid=$(echo "$inbound" | jq -r '.tls.reality.short_id[0] // ""')
+
+        # Đọc Public Key tương ứng với Port từ public_keys.json
+        pbk=""
+        if [ -f "$KEYS_FILE" ]; then
+            pbk=$(jq -r --arg port "$port" '.[$port] // ""' "$KEYS_FILE" 2>/dev/null)
+        fi
 
         case "$type" in
             vless)

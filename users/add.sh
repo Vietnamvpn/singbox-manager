@@ -4,10 +4,15 @@
 INSTALL_DIR="/usr/local/singbox-manager"
 source "$INSTALL_DIR/lib/color.sh"
 CONFIG_FILE="$INSTALL_DIR/config/config.json"
+KEYS_FILE="$INSTALL_DIR/config/public_keys.json"
 
 if [ ! -f "$CONFIG_FILE" ]; then
     echo -e "${YELLOW}Khởi tạo config.json cơ bản...${NC}"
     echo '{"log": {"level": "info"}, "inbounds": [], "outbounds": [{"type": "direct", "tag": "direct"}]}' > "$CONFIG_FILE"
+fi
+
+if [ ! -f "$KEYS_FILE" ]; then
+    echo '{}' > "$KEYS_FILE"
 fi
 
 clear
@@ -61,6 +66,9 @@ if [ "$PROTO" == "vless" ]; then
     PUBLIC_KEY=$(echo "$KEYPAIR" | grep "PublicKey" | awk '{print $2}')
     # Sinh Short ID 8 ký tự Hex ngẫu nhiên
     SHORT_ID=$(openssl rand -hex 4 2>/dev/null || tr -dc 'a-f0-9' </dev/urandom | head -c 8)
+
+    # Lưu Public Key vào file public_keys.json riêng
+    jq --arg port "$PORT" --arg pbk "$PUBLIC_KEY" '.[$port] = $pbk' "$KEYS_FILE" > "${KEYS_FILE}.tmp" && mv "${KEYS_FILE}.tmp" "$KEYS_FILE"
 fi
 
 NEW_INBOUND=$(cat "$TEMPLATE_FILE" | \
@@ -71,7 +79,6 @@ NEW_INBOUND=$(cat "$TEMPLATE_FILE" | \
     sed "s/SNI/$SNI/g" | \
     sed "s/UUID/$UUID/g" | \
     sed "s/PRIVATE_KEY/$PRIVATE_KEY/g" | \
-    sed "s/PUBLIC_KEY/$PUBLIC_KEY/g" | \
     sed "s/0123456789abcdef/$SHORT_ID/g" | \
     sed "s/SHORT_ID/$SHORT_ID/g")
 

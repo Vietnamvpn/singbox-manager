@@ -6,8 +6,7 @@
   "users": [
     {
       "uuid": "UUID",
-      "name": "USERNAME",
-      "public_key": "PUBLIC_KEY"
+      "name": "USERNAME"
     }
   ],
   "tls": {
