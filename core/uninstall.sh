@@ -17,6 +17,7 @@ if [[ "$confirm" == "y" || "$confirm" == "Y" ]]; then
     echo -e "${YELLOW}Đang xóa tệp thực thi và mã nguồn...${NC}"
     rm -f /usr/local/bin/sing-box
     rm -f /usr/bin/vvc
+    rm -rf /usr/local/etc/sing-box
     rm -rf "$INSTALL_DIR"
 
     echo -e "${GREEN}Đã gỡ cài đặt thành công! Tạm biệt.${NC}"

@@ -11,12 +11,12 @@ if [[ $EUID -ne 0 ]]; then
     exit 1
 fi
 
-# 2. Kiểm tra và cài đặt gói phụ thuộc theo Hệ điều hành
+# 2. Kiểm tra và cài đặt gói phụ thuộc theo Hệ điều hành (Đã bổ sung openssl)
 echo "Đang kiểm tra hệ điều hành và cài đặt các gói cơ bản..."
 if [ -x "$(command -v apt)" ]; then
-    apt update -y && apt install -y curl wget unzip jq tar tzdata
+    apt update -y && apt install -y curl wget unzip jq tar tzdata openssl
 elif [ -x "$(command -v yum)" ]; then
-    yum update -y && yum install -y curl wget unzip jq tar tzdata
+    yum update -y && yum install -y curl wget unzip jq tar tzdata openssl
 else
     echo -e "\033[0;31mLỗi: Hệ điều hành không được hỗ trợ (chỉ hỗ trợ Debian/Ubuntu hoặc CentOS/AlmaLinux).\033[0m"
     exit 1
@@ -27,6 +27,18 @@ echo "Đang khởi tạo cấu trúc thư mục..."
 mkdir -p "$INSTALL_DIR"
 cd "$INSTALL_DIR" || exit
 mkdir -p core config/templates users node lib
+
+# 3.1. Khởi tạo chứng chỉ tự ký cho Hysteria2 và TUIC
+CERT_DIR="/usr/local/etc/sing-box"
+if [ ! -f "$CERT_DIR/cert.pem" ] || [ ! -f "$CERT_DIR/private.key" ]; then
+    echo "Đang khởi tạo chứng chỉ tự ký cho Hysteria2 và TUIC..."
+    mkdir -p "$CERT_DIR"
+    openssl req -x509 -nodes -newkey rsa:2048 \
+        -keyout "$CERT_DIR/private.key" \
+        -out "$CERT_DIR/cert.pem" \
+        -days 3650 \
+        -subj "/CN=bing.com" >/dev/null 2>&1
+fi
 
 # 4. Danh sách toàn bộ file cần tải từ Github
 FILES=(
