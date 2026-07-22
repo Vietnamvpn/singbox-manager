@@ -5,7 +5,6 @@ INSTALL_DIR="/usr/local/singbox-manager"
 source "$INSTALL_DIR/lib/color.sh"
 CONFIG_FILE="$INSTALL_DIR/config/config.json"
 
-# Kiểm tra config.json
 if [ ! -f "$CONFIG_FILE" ]; then
     echo -e "${YELLOW}Khởi tạo config.json cơ bản...${NC}"
     echo '{"log": {"level": "info"}, "inbounds": [], "outbounds": [{"type": "direct", "tag": "direct"}]}' > "$CONFIG_FILE"
@@ -41,7 +40,6 @@ read -p "Nhập Port ($PROTO): " PORT
 read -p "Nhập Tên người dùng (Username/Ghi chú): " USERNAME
 read -p "Nhập SNI (vd: yahoo.com): " SNI
 
-# Khởi tạo các biến mặc định
 UUID=$(cat /proc/sys/kernel/random/uuid)
 PASSWORD=$(tr -dc 'a-zA-Z0-9' </dev/urandom | head -c 12)
 PRIVATE_KEY=""
@@ -54,7 +52,6 @@ if [ "$PROTO" == "vless" ]; then
     PUBLIC_KEY=$(echo "$KEYPAIR" | grep "PublicKey" | awk '{print $2}')
 fi
 
-# Thay thế các tham số vào template chuẩn cấu trúc JSON
 NEW_INBOUND=$(cat "$TEMPLATE_FILE" | \
     sed "s/\"listen_port\": \"PORT\"/\"listen_port\": $PORT/g" | \
     sed "s/PORT/$PORT/g" | \
@@ -62,9 +59,9 @@ NEW_INBOUND=$(cat "$TEMPLATE_FILE" | \
     sed "s/PASSWORD/$PASSWORD/g" | \
     sed "s/SNI/$SNI/g" | \
     sed "s/UUID/$UUID/g" | \
-    sed "s/PRIVATE_KEY/$PRIVATE_KEY/g")
+    sed "s/PRIVATE_KEY/$PRIVATE_KEY/g" | \
+    sed "s/PUBLIC_KEY/$PUBLIC_KEY/g")
 
-# Cập nhật vào config.json bằng jq
 jq --argjson new_inbound "$NEW_INBOUND" '.inbounds += [$new_inbound]' "$CONFIG_FILE" > "${CONFIG_FILE}.tmp" && mv "${CONFIG_FILE}.tmp" "$CONFIG_FILE"
 
 echo -e "${GREEN}Đã thêm thành công!${NC}"
@@ -77,5 +74,4 @@ echo -e "Username  : $USERNAME"
 [[ "$PROTO" == "vless" ]] && echo -e "Public Key: $PUBLIC_KEY"
 echo -e "${CYAN}====================================================${NC}"
 
-# Khởi động lại service
 bash "$INSTALL_DIR/node/restart.sh"
