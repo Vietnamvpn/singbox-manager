@@ -45,6 +45,37 @@ function show_user_menu() {
     esac
 }
 
+function show_update_menu() {
+    clear
+    echo -e "${CYAN}====================================================${NC}"
+    echo -e "${GREEN}                 TÙY CHỌN CẬP NHẬT                  ${NC}"
+    echo -e "${CYAN}====================================================${NC}"
+    echo -e "${YELLOW} 1.${NC} Cập nhật Mã nguồn Script (Tải từ GitHub)"
+    echo -e "${YELLOW} 2.${NC} Cập nhật Sing-box Core (Bản mới nhất)"
+    echo -e "${YELLOW} 0.${NC} Quay lại Menu chính"
+    echo -e "${CYAN}====================================================${NC}"
+    read -p "Vui lòng chọn chức năng (0-2): " upchoice
+
+    case $upchoice in
+        1)
+            bash "$INSTALL_DIR/core/update_script.sh"
+            read -p "Nhấn Enter để quay lại..." && show_update_menu
+            ;;
+        2)
+            bash "$INSTALL_DIR/core/update.sh"
+            read -p "Nhấn Enter để quay lại..." && show_update_menu
+            ;;
+        0)
+            return 0
+            ;;
+        *)
+            echo -e "${RED}Lựa chọn không hợp lệ!${NC}"
+            sleep 1
+            show_update_menu
+            ;;
+    esac
+}
+
 function show_menu() {
     clear
     echo -e "${CYAN}====================================================${NC}"
@@ -53,7 +84,7 @@ function show_menu() {
     echo -e "${YELLOW} 1.${NC} Quản lý Người dùng (Thêm/Xóa/Danh sách)"
     echo -e "${YELLOW} 2.${NC} Quản lý Node (Bật/Tắt/Khởi động lại)"
     echo -e "${YELLOW} 3.${NC} Quản lý Cấu hình (Config)"
-    echo -e "${YELLOW} 4.${NC} Cập nhật Sing-box core"
+    echo -e "${YELLOW} 4.${NC} Cập nhật Hệ thống (Script & Core)"
     echo -e "${YELLOW} 5.${NC} Gỡ cài đặt hệ thống"
     echo -e "${YELLOW} 0.${NC} Thoát"
     echo -e "${CYAN}====================================================${NC}"
@@ -73,8 +104,8 @@ function show_menu() {
             read -p "Nhấn Enter để quay lại..." && show_menu
             ;;
         4)
-            bash "$INSTALL_DIR/core/update.sh"
-            read -p "Nhấn Enter để quay lại..." && show_menu
+            show_update_menu
+            show_menu
             ;;
         5)
             bash "$INSTALL_DIR/core/uninstall.sh"
