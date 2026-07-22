@@ -21,37 +21,47 @@ echo -e "${CYAN}================================================================
 echo -e "${GREEN}                     DANH SÁCH LINK NGƯỜI DÙNG                        ${NC}"
 echo -e "${CYAN}======================================================================${NC}"
 
-COUNT=1
-jq -c '.inbounds[]' "$CONFIG_FILE" | while read -r inbound; do
-    type=$(echo "$inbound" | jq -r '.type')
-    port=$(echo "$inbound" | jq -r '.listen_port')
-    name=$(echo "$inbound" | jq -r '.users[0].name // "Node"')
-    uuid=$(echo "$inbound" | jq -r '.users[0].uuid // ""')
-    pass=$(echo "$inbound" | jq -r '.users[0].password // ""')
-    sni=$(echo "$inbound" | jq -r '.tls.server_name // "yahoo.com"')
-    pbk=$(echo "$inbound" | jq -r '.users[0].public_key // .tls.reality.public_key // ""')
-    sid=$(echo "$inbound" | jq -r '.tls.reality.short_id[0] // ""')
+# Lấy danh sách tên người dùng duy nhất
+USERNAMES=$(jq -r '[.inbounds[].users[0].name // "Node"] | unique | .[]' "$CONFIG_FILE")
 
-    echo -e "${YELLOW}${COUNT}. User: ${GREEN}${name}${NC} | Giao thức: ${CYAN}${type^^}${NC} | Port: ${CYAN}${port}${NC}"
+if [ -z "$USERNAMES" ]; then
+    echo -e "${YELLOW}Chưa có người dùng/node nào được tạo.${NC}"
+    exit 0
+fi
 
-    case "$type" in
-        vless)
-            VLESS_LINK="vless://${uuid}@${SERVER_IP}:${port}?type=grpc&security=reality&fp=chrome&sni=${sni}"
-            [ -n "$pbk" ] && VLESS_LINK="${VLESS_LINK}&pbk=${pbk}"
-            [ -n "$sid" ] && VLESS_LINK="${VLESS_LINK}&sid=${sid}"
-            VLESS_LINK="${VLESS_LINK}&serviceName=vless-grpc#${name}"
-            echo -e "   Link: ${CYAN}${VLESS_LINK}${NC}"
-            ;;
-        hysteria2)
-            echo -e "   Link: ${CYAN}hysteria2://${pass}@${SERVER_IP}:${port}?sni=${sni}&insecure=1#${name}${NC}"
-            ;;
-        tuic)
-            echo -e "   Link: ${CYAN}tuic://${uuid}:${pass}@${SERVER_IP}:${port}?sni=${sni}&congestion_control=bbr&alpn=h3&allow_insecure=1#${name}${NC}"
-            ;;
-        *)
-            echo -e "   ${YELLOW}Giao thức $type chưa hỗ trợ xuất link tự động.${NC}"
-            ;;
-    esac
+echo "$USERNAMES" | while read -r username; do
+    [ -z "$username" ] && continue
+
+    echo -e "${GREEN}User: ${YELLOW}${username}${NC}:"
+
+    jq -c --arg uname "$username" '.inbounds[] | select((.users[0].name // "Node") == $uname)' "$CONFIG_FILE" | while read -r inbound; do
+        type=$(echo "$inbound" | jq -r '.type')
+        port=$(echo "$inbound" | jq -r '.listen_port')
+        name=$(echo "$inbound" | jq -r '.users[0].name // "Node"')
+        uuid=$(echo "$inbound" | jq -r '.users[0].uuid // ""')
+        pass=$(echo "$inbound" | jq -r '.users[0].password // ""')
+        sni=$(echo "$inbound" | jq -r '.tls.server_name // "yahoo.com"')
+        pbk=$(echo "$inbound" | jq -r '.users[0].public_key // .tls.reality.public_key // ""')
+        sid=$(echo "$inbound" | jq -r '.tls.reality.short_id[0] // ""')
+
+        case "$type" in
+            vless)
+                VLESS_LINK="vless://${uuid}@${SERVER_IP}:${port}?type=grpc&security=reality&fp=chrome&sni=${sni}"
+                [ -n "$pbk" ] && VLESS_LINK="${VLESS_LINK}&pbk=${pbk}"
+                [ -n "$sid" ] && VLESS_LINK="${VLESS_LINK}&sid=${sid}"
+                VLESS_LINK="${VLESS_LINK}&serviceName=vless-grpc#${name}"
+                echo -e "${CYAN}${VLESS_LINK}${NC}"
+                ;;
+            hysteria2)
+                echo -e "${CYAN}hysteria2://${pass}@${SERVER_IP}:${port}?sni=${sni}&insecure=1#${name}${NC}"
+                ;;
+            tuic)
+                echo -e "${CYAN}tuic://${uuid}:${pass}@${SERVER_IP}:${port}?sni=${sni}&congestion_control=bbr&alpn=h3&allow_insecure=1#${name}${NC}"
+                ;;
+            *)
+                echo -e "${YELLOW}Giao thức $type chưa hỗ trợ xuất link tự động.${NC}"
+                ;;
+        esac
+    done
     echo -e "----------------------------------------------------------------------"
-    ((COUNT++))
 done
