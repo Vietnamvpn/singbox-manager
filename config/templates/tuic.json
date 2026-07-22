@@ -6,6 +6,7 @@
   "users": [
     {
       "uuid": "UUID",
+      "name": "USERNAME",
       "password": "PASSWORD"
     }
   ],
