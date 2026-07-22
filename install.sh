@@ -11,7 +11,7 @@ if [[ $EUID -ne 0 ]]; then
     exit 1
 fi
 
-# 2. Kiểm tra và cài đặt gói phụ thuộc theo Hệ điều hành (Đã bổ sung openssl)
+# 2. Kiểm tra và cài đặt gói phụ thuộc theo Hệ điều hành
 echo "Đang kiểm tra hệ điều hành và cài đặt các gói cơ bản..."
 if [ -x "$(command -v apt)" ]; then
     apt update -y && apt install -y curl wget unzip jq tar tzdata openssl
@@ -46,6 +46,7 @@ FILES=(
     "config.conf"
     "core/install.sh"
     "core/update.sh"
+    "core/update_script.sh"
     "core/uninstall.sh"
     "core/service.sh"
     "config/config.json"
@@ -90,6 +91,12 @@ if [ -f "$INSTALL_DIR/core/install.sh" ]; then
 else
     echo -e "\033[0;31mLỗi: Không tìm thấy core/install.sh. Vui lòng kiểm tra lại Github Repository.\033[0m"
     exit 1
+fi
+
+# 8.1. Khởi tạo systemd service cho Sing-box
+echo "Đang cấu hình dịch vụ systemd..."
+if [ -f "$INSTALL_DIR/core/service.sh" ]; then
+    bash "$INSTALL_DIR/core/service.sh"
 fi
 
 echo -e "\033[0;32m====================================================\033[0m"
