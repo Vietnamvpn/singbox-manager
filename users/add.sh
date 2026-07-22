@@ -32,7 +32,8 @@ esac
 
 TEMPLATE_FILE="$INSTALL_DIR/config/templates/${PROTO}.json"
 if [ ! -f "$TEMPLATE_FILE" ]; then
-    echo -e "${RED}Lỗi: Không tìm thấy file mẫu $TEMPLATE_FILE.${NC}"
+    echo -e "${RED}Lỗi: Không tìm thấy file mẫu $TEMPLATE_FILE tại VPS.${NC}"
+    read -p "Nhấn Enter để thoát..."
     exit 1
 fi
 
@@ -44,19 +45,24 @@ read -p "Nhập SNI (vd: yahoo.com): " SNI
 UUID=$(cat /proc/sys/kernel/random/uuid)
 PASSWORD=$(tr -dc 'a-zA-Z0-9' </dev/urandom | head -c 12)
 PRIVATE_KEY=""
+PUBLIC_KEY=""
 
 if [ "$PROTO" == "vless" ]; then
-    # VLESS yêu cầu UUID, Tên và Private Key cho Reality[cite: 1]
     echo -e "${YELLOW}Đang tạo Reality Keypair cho VLESS...${NC}"
     KEYPAIR=$(/usr/local/bin/sing-box generate reality-keypair)
     PRIVATE_KEY=$(echo "$KEYPAIR" | grep "PrivateKey" | awk '{print $2}')
     PUBLIC_KEY=$(echo "$KEYPAIR" | grep "PublicKey" | awk '{print $2}')
-    echo -e "Public Key của bạn (Dùng để cấp cho Client): ${GREEN}$PUBLIC_KEY${NC}"
 fi
 
-# Thay thế các tham số trong file template
-# Lưu ý: "PORT" trong mẫu là chuỗi, ta chuyển thành số nguyên trong config thực tế.
-NEW_INBOUND=$(cat "$TEMPLATE_FILE" | sed "s/\"PORT\"/$PORT/g; s/\"UUID\"/\"$UUID\"/g; s/\"USERNAME\"/\"$USERNAME\"/g; s/\"PASSWORD\"/\"$PASSWORD\"/g; s/\"SNI\"/\"$SNI\"/g; s/\"PRIVATE_KEY\"/\"$PRIVATE_KEY\"/g")
+# Thay thế các tham số vào template chuẩn cấu trúc JSON
+NEW_INBOUND=$(cat "$TEMPLATE_FILE" | \
+    sed "s/\"listen_port\": \"PORT\"/\"listen_port\": $PORT/g" | \
+    sed "s/PORT/$PORT/g" | \
+    sed "s/USERNAME/$USERNAME/g" | \
+    sed "s/PASSWORD/$PASSWORD/g" | \
+    sed "s/SNI/$SNI/g" | \
+    sed "s/UUID/$UUID/g" | \
+    sed "s/PRIVATE_KEY/$PRIVATE_KEY/g")
 
 # Cập nhật vào config.json bằng jq
 jq --argjson new_inbound "$NEW_INBOUND" '.inbounds += [$new_inbound]' "$CONFIG_FILE" > "${CONFIG_FILE}.tmp" && mv "${CONFIG_FILE}.tmp" "$CONFIG_FILE"

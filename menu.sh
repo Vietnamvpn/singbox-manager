@@ -4,6 +4,47 @@
 INSTALL_DIR="/usr/local/singbox-manager"
 source "$INSTALL_DIR/lib/color.sh"
 
+function show_user_menu() {
+    clear
+    echo -e "${CYAN}====================================================${NC}"
+    echo -e "${GREEN}             QUẢN LÝ NGƯỜI DÙNG / NODE             ${NC}"
+    echo -e "${CYAN}====================================================${NC}"
+    echo -e "${YELLOW} 1.${NC} Thêm Người dùng / Node mới"
+    echo -e "${YELLOW} 2.${NC} Xem Danh sách Người dùng / Node"
+    echo -e "${YELLOW} 3.${NC} Xóa Người dùng / Node"
+    echo -e "${YELLOW} 4.${NC} Xóa toàn bộ Người dùng / Node (Reset)"
+    echo -e "${YELLOW} 0.${NC} Quay lại Menu chính"
+    echo -e "${CYAN}====================================================${NC}"
+    read -p "Vui lòng chọn chức năng (0-4): " uchoice
+
+    case $uchoice in
+        1)
+            bash "$INSTALL_DIR/users/add.sh"
+            read -p "Nhấn Enter để quay lại..." && show_user_menu
+            ;;
+        2)
+            bash "$INSTALL_DIR/users/list.sh"
+            read -p "Nhấn Enter để quay lại..." && show_user_menu
+            ;;
+        3)
+            bash "$INSTALL_DIR/users/delete.sh"
+            read -p "Nhấn Enter để quay lại..." && show_user_menu
+            ;;
+        4)
+            bash "$INSTALL_DIR/users/reset.sh"
+            read -p "Nhấn Enter để quay lại..." && show_user_menu
+            ;;
+        0)
+            return 0
+            ;;
+        *)
+            echo -e "${RED}Lựa chọn không hợp lệ!${NC}"
+            sleep 1
+            show_user_menu
+            ;;
+    esac
+}
+
 function show_menu() {
     clear
     echo -e "${CYAN}====================================================${NC}"
@@ -20,12 +61,11 @@ function show_menu() {
 
     case $choice in
         1)
-            # Tạm thời dẫn tới add.sh (sẽ code sau khi bạn đẩy code này lên)
-            bash "$INSTALL_DIR/users/add.sh" 2>/dev/null || echo -e "${YELLOW}Chức năng đang được hoàn thiện...${NC}"
-            read -p "Nhấn Enter để quay lại..." && show_menu
+            show_user_menu
+            show_menu
             ;;
         2)
-            bash "$INSTALL_DIR/node/status.sh" 2>/dev/null || echo -e "${YELLOW}Chức năng đang được hoàn thiện...${NC}"
+            bash "$INSTALL_DIR/node/status.sh"
             read -p "Nhấn Enter để quay lại..." && show_menu
             ;;
         3)
@@ -33,11 +73,11 @@ function show_menu() {
             read -p "Nhấn Enter để quay lại..." && show_menu
             ;;
         4)
-            bash "$INSTALL_DIR/core/update.sh" 2>/dev/null || echo -e "${YELLOW}Chưa có file update.sh${NC}"
+            bash "$INSTALL_DIR/core/update.sh"
             read -p "Nhấn Enter để quay lại..." && show_menu
             ;;
         5)
-            bash "$INSTALL_DIR/core/uninstall.sh" 2>/dev/null || echo -e "${YELLOW}Chưa có file uninstall.sh${NC}"
+            bash "$INSTALL_DIR/core/uninstall.sh"
             ;;
         0)
             exit 0
