@@ -13,7 +13,7 @@ function show_user_menu() {
     echo -e "${YELLOW} 2.${NC} Xem Danh sách User / Node"
     echo -e "${YELLOW} 3.${NC} Xóa User / Node"
     echo -e "${YELLOW} 4.${NC} Xóa toàn bộ User / Node"
-    echo -e "${YELLOW} 0.${NC} Quay lại Menu chính"
+    echo -e "${RED} 0.${NC} Quay lại Menu chính"
     echo -e "${CYAN}====================================================${NC}"
     read -p "Vui lòng chọn chức năng (0-4): " uchoice
 
@@ -52,7 +52,7 @@ function show_update_menu() {
     echo -e "${CYAN}====================================================${NC}"
     echo -e "${YELLOW} 1.${NC} Cập nhật Mã nguồn Script"
     echo -e "${YELLOW} 2.${NC} Cập nhật Sing-box Core"
-    echo -e "${YELLOW} 0.${NC} Quay lại Menu chính"
+    echo -e "${RED} 0.${NC} Quay lại Menu chính"
     echo -e "${CYAN}====================================================${NC}"
     read -p "Vui lòng chọn chức năng (0-2): " upchoice
 
@@ -95,20 +95,20 @@ function show_menu() {
     fi
 
     clear
-    echo -e "${CYAN}======================================================${NC}"
-    echo -e "${CYAN}||${NC}              ${YELLOW}CHÀO MỪNG BẠN ĐẾN VỚI${NC}               ${CYAN}||${NC}"
-    echo -e "${CYAN}||${NC}       ${YELLOW}MENU QUẢN LÝ SING-BOX - VIETNAMVPN${NC}         ${CYAN}||${NC}"
-    echo -e "${CYAN}======================================================${NC}"
-    echo -e "${CYAN}Tác giả:${NC} Vietnamvpn | ${CYAN}Website:${NC} https://linksub24h.com"
+    echo -e "${BLUE}============================================================${NC}"
+    echo -e "${BLUE}||${NC}                 ${YELLOW}CHÀO MỪNG BẠN ĐẾN VỚI${NC}                  ${BLUE}||${NC}"
+    echo -e "${BLUE}||${NC}          ${YELLOW}MENU QUẢN LÝ SING-BOX - VIETNAMVPN${NC}            ${BLUE}||${NC}"
+    echo -e "${BLUE}============================================================${NC}"
+    echo -e "${BLUE}Tác giả:${NC} Vietnamvpn | ${BLUE}Website:${NC} https://linksub24h.com"
     echo -e "Phiên bản Sing-box Core: ${YELLOW}${singbox_ver}${NC} | Trạng thái: ${status_color}${singbox_status^^}${NC}"
-    echo -e "${CYAN}======================================================${NC}"
+    echo -e "${BLUE}============================================================${NC}"
     echo -e "${YELLOW} 1.${NC} Quản lý Người dùng"
     echo -e "${YELLOW} 2.${NC} Quản lý Node"
     echo -e "${YELLOW} 3.${NC} Quản lý Cấu hình Config"
     echo -e "${YELLOW} 4.${NC} Cập nhật Hệ thống"
     echo -e "${YELLOW} 5.${NC} Gỡ cài đặt hệ thống"
-    echo -e "${YELLOW} 0.${NC} Thoát"
-    echo -e "${CYAN}======================================================${NC}"
+    echo -e "${RED} 0.${NC} Thoát"
+    echo -e "${BLUE}============================================================${NC}"
     read -p "Vui lòng chọn chức năng (0-5): " choice
 
     case $choice in
