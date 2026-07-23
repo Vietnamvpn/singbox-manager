@@ -7,12 +7,12 @@ source "$INSTALL_DIR/lib/color.sh"
 function show_user_menu() {
     clear
     echo -e "${CYAN}====================================================${NC}"
-    echo -e "${GREEN}             QUẢN LÝ NGƯỜI DÙNG / NODE             ${NC}"
+    echo -e "${GREEN}             QUẢN LÝ NGƯỜI DÙNG & NODE             ${NC}"
     echo -e "${CYAN}====================================================${NC}"
-    echo -e "${YELLOW} 1.${NC} Thêm Người dùng / Node mới"
-    echo -e "${YELLOW} 2.${NC} Xem Danh sách Người dùng / Node"
-    echo -e "${YELLOW} 3.${NC} Xóa Người dùng / Node"
-    echo -e "${YELLOW} 4.${NC} Xóa toàn bộ Người dùng / Node (Reset)"
+    echo -e "${YELLOW} 1.${NC} Thêm User / Node mới"
+    echo -e "${YELLOW} 2.${NC} Xem Danh sách User / Node"
+    echo -e "${YELLOW} 3.${NC} Xóa User / Node"
+    echo -e "${YELLOW} 4.${NC} Xóa toàn bộ User / Node"
     echo -e "${YELLOW} 0.${NC} Quay lại Menu chính"
     echo -e "${CYAN}====================================================${NC}"
     read -p "Vui lòng chọn chức năng (0-4): " uchoice
@@ -79,8 +79,12 @@ function show_update_menu() {
 function show_menu() {
     clear
     echo -e "${CYAN}====================================================${NC}"
-    echo -e "${GREEN}          QUẢN LÝ SING-BOX - VIETNAMVPN           ${NC}"
+    echo -e "${YELLOW}              CHÀO MỪNG BẠN ĐẾN VỚI               ${NC}"
+    echo -e "${YELLOW}       MENU QUẢN LÝ SING-BOX - VIETNAMVPN         ${NC}"
     echo -e "${CYAN}====================================================${NC}"
+    echo -e "${CYAN}Tác giả:${NC} Vietnamvpn | ${CYAN}Website:${NC} https://linksub24h.com"
+    echo -e " Phiên bản Sing-box Core: ${YELLOW}${singbox_ver}${NC} | Trạng thái: ${status_color}${singbox_status^^}${NC}"
+    echo -e "${CYAN}======================================================================${NC}"
     echo -e "${YELLOW} 1.${NC} Quản lý Người dùng"
     echo -e "${YELLOW} 2.${NC} Quản lý Node"
     echo -e "${YELLOW} 3.${NC} Quản lý Cấu hình Config"
@@ -100,8 +104,8 @@ function show_menu() {
             read -p "Nhấn Enter để quay lại..." && show_menu
             ;;
         3)
-            echo -e "${YELLOW}Tính năng cấu hình đang được thiết lập...${NC}"
-            read -p "Nhấn Enter để quay lại..." && show_menu
+            bash "$INSTALL_DIR/config/manage.sh"
+            show_menu
             ;;
         4)
             show_update_menu
