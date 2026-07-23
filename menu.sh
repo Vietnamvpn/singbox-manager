@@ -87,10 +87,10 @@ function show_menu() {
 
     # Lấy trạng thái hoạt động của dịch vụ Sing-box
     if systemctl is-active --quiet singbox 2>/dev/null; then
-        singbox_status="Đang chạy"
+        singbox_status="Online"
         status_color="${GREEN}"
     else
-        singbox_status="Đã dừng"
+        singbox_status="Offline"
         status_color="${RED}"
     fi
 
