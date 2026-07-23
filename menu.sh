@@ -77,21 +77,38 @@ function show_update_menu() {
 }
 
 function show_menu() {
+    # Lấy phiên bản Sing-box Core
+    if [ -f "/usr/local/bin/sing-box" ]; then
+        singbox_ver=$(/usr/local/bin/sing-box version 2>/dev/null | head -n 1 | awk '{print $3}')
+        [ -z "$singbox_ver" ] && singbox_ver="Unknown"
+    else
+        singbox_ver="Chưa cài đặt"
+    fi
+
+    # Lấy trạng thái hoạt động của dịch vụ Sing-box
+    if systemctl is-active --quiet singbox 2>/dev/null; then
+        singbox_status="Đang chạy"
+        status_color="${GREEN}"
+    else
+        singbox_status="Đã dừng"
+        status_color="${RED}"
+    fi
+
     clear
-    echo -e "${CYAN}=====================================================${NC}"
+    echo -e "${CYAN}======================================================${NC}"
     echo -e "${CYAN}||${NC}              ${YELLOW}CHÀO MỪNG BẠN ĐẾN VỚI${NC}               ${CYAN}||${NC}"
     echo -e "${CYAN}||${NC}       ${YELLOW}MENU QUẢN LÝ SING-BOX - VIETNAMVPN${NC}         ${CYAN}||${NC}"
-    echo -e "${CYAN}=====================================================${NC}"
+    echo -e "${CYAN}======================================================${NC}"
     echo -e "${CYAN}Tác giả:${NC} Vietnamvpn | ${CYAN}Website:${NC} https://linksub24h.com"
     echo -e "Phiên bản Sing-box Core: ${YELLOW}${singbox_ver}${NC} | Trạng thái: ${status_color}${singbox_status^^}${NC}"
-    echo -e "${CYAN}=====================================================${NC}"
+    echo -e "${CYAN}======================================================${NC}"
     echo -e "${YELLOW} 1.${NC} Quản lý Người dùng"
     echo -e "${YELLOW} 2.${NC} Quản lý Node"
     echo -e "${YELLOW} 3.${NC} Quản lý Cấu hình Config"
     echo -e "${YELLOW} 4.${NC} Cập nhật Hệ thống"
     echo -e "${YELLOW} 5.${NC} Gỡ cài đặt hệ thống"
     echo -e "${YELLOW} 0.${NC} Thoát"
-    echo -e "${CYAN}=====================================================${NC}"
+    echo -e "${CYAN}======================================================${NC}"
     read -p "Vui lòng chọn chức năng (0-5): " choice
 
     case $choice in
