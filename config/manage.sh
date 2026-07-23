@@ -11,12 +11,13 @@ mkdir -p "$BACKUP_DIR"
 
 function check_and_restart() {
     echo -e "${YELLOW}Đang kiểm tra cú pháp cấu hình Sing-box...${NC}"
-    if /usr/local/bin/sing-box check -c "$CONFIG_FILE" >/dev/null 2>&1; then
+    # Bổ sung biến môi trường bỏ qua cảnh báo/lỗi legacy của Sing-box 1.12+
+    if ENABLE_DEPRECATED_LEGACY_DNS_SERVERS=true ENABLE_DEPRECATED_LEGACY_DOMAIN_STRATEGY_OPTIONS=true /usr/local/bin/sing-box check -c "$CONFIG_FILE" >/dev/null 2>&1; then
         echo -e "${GREEN}Cấu hình hợp lệ! Đang khởi động lại Sing-box...${NC}"
         bash "$INSTALL_DIR/node/restart.sh"
     else
         echo -e "${RED}Lỗi: Cấu hình không hợp lệ! Chi tiết lỗi:${NC}"
-        /usr/local/bin/sing-box check -c "$CONFIG_FILE"
+        ENABLE_DEPRECATED_LEGACY_DNS_SERVERS=true ENABLE_DEPRECATED_LEGACY_DOMAIN_STRATEGY_OPTIONS=true /usr/local/bin/sing-box check -c "$CONFIG_FILE"
     fi
 }
 
@@ -66,7 +67,6 @@ function show_config_menu() {
             ;;
         3)
             echo -e "${YELLOW}Đang tối ưu cấu hình cho NAT VPS (Ưu tiên IPv6 / NAT64)...${NC}"
-            # Sử dụng chuẩn DNS mới type: local của Sing-box 1.12+
             jq 'del(.outbounds[]?.domain_strategy) | .dns = {"servers": [{"type": "local", "tag": "default-dns", "strategy": "prefer_ipv6"}]}' "$CONFIG_FILE" > "${CONFIG_FILE}.tmp" && mv "${CONFIG_FILE}.tmp" "$CONFIG_FILE"
             echo -e "${GREEN}Đã tối ưu cấu hình DNS ưu tiên IPv6 theo chuẩn Sing-box 1.12+.${NC}"
             check_and_restart
