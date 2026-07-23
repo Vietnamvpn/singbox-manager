@@ -5,6 +5,7 @@ INSTALL_DIR="/usr/local/singbox-manager"
 source "$INSTALL_DIR/lib/color.sh"
 CONFIG_FILE="$INSTALL_DIR/config/config.json"
 KEYS_FILE="$INSTALL_DIR/config/public_keys.json"
+DOMAINS_FILE="$INSTALL_DIR/config/domains.json"
 
 if [ ! -f "$CONFIG_FILE" ]; then
     echo -e "${YELLOW}Khởi tạo config.json cơ bản...${NC}"
@@ -15,15 +16,19 @@ if [ ! -f "$KEYS_FILE" ]; then
     echo '{}' > "$KEYS_FILE"
 fi
 
+if [ ! -f "$DOMAINS_FILE" ]; then
+    echo '{}' > "$DOMAINS_FILE"
+fi
+
 clear
-echo -e "${CYAN}====================================================${NC}"
-echo -e "${GREEN}             THÊM NGƯỜI DÙNG / NODE MỚI             ${NC}"
-echo -e "${CYAN}====================================================${NC}"
+echo -e "${BLUE}====================================================${NC}"
+echo -e "${GREEN}             THÊM NGƯỜI DÙNG & NODE MỚI             ${NC}"
+echo -e "${BLUE}====================================================${NC}"
 echo -e "${YELLOW} 1.${NC} VLESS (Reality + gRPC)"
 echo -e "${YELLOW} 2.${NC} Hysteria2"
 echo -e "${YELLOW} 3.${NC} TUIC"
-echo -e "${YELLOW} 0.${NC} Hủy bỏ"
-echo -e "${CYAN}====================================================${NC}"
+echo -e "${RED} 0.${NC} Hủy bỏ"
+echo -e "${BLUE}====================================================${NC}"
 read -p "Chọn giao thức (0-3): " proto_choice
 
 case $proto_choice in
@@ -42,8 +47,14 @@ if [ ! -f "$TEMPLATE_FILE" ]; then
 fi
 
 read -p "Nhập Port ($PROTO): " PORT
-read -p "Nhập Tên người dùng (Username/Ghi chú): " USERNAME
-read -p "Nhập SNI (Để trống sẽ chọn ngẫu nhiên): " SNI
+read -p "Nhập Tên người dùng: " USERNAME
+read -p "Nhập Domain hiển thị hoặc để trống: " NODE_DOMAIN
+read -p "Nhập SNI nếu có: " SNI
+
+# Lưu Domain hiển thị nếu người dùng nhập
+if [ -n "$NODE_DOMAIN" ]; then
+    jq --arg port "$PORT" --arg domain "$NODE_DOMAIN" '.[$port] = $domain' "$DOMAINS_FILE" > "${DOMAINS_FILE}.tmp" && mv "${DOMAINS_FILE}.tmp" "$DOMAINS_FILE"
+fi
 
 # Nếu SNI để trống, tự động chọn ngẫu nhiên từ danh sách
 if [ -z "$SNI" ]; then
@@ -85,10 +96,11 @@ NEW_INBOUND=$(cat "$TEMPLATE_FILE" | \
 jq --argjson new_inbound "$NEW_INBOUND" '.inbounds += [$new_inbound]' "$CONFIG_FILE" > "${CONFIG_FILE}.tmp" && mv "${CONFIG_FILE}.tmp" "$CONFIG_FILE"
 
 echo -e "${GREEN}Đã thêm thành công!${NC}"
-echo -e "${CYAN}====================================================${NC}"
+echo -e "${BLUE}====================================================${NC}"
 echo -e "Giao thức : $PROTO"
 echo -e "Port      : $PORT"
 echo -e "Username  : $USERNAME"
+[ -n "$NODE_DOMAIN" ] && echo -e "Domain    : $NODE_DOMAIN"
 echo -e "SNI       : $SNI"
 [[ "$PROTO" == "vless" || "$PROTO" == "tuic" ]] && echo -e "UUID      : $UUID"
 [[ "$PROTO" == "hysteria2" || "$PROTO" == "tuic" ]] && echo -e "Password  : $PASSWORD"
@@ -96,6 +108,6 @@ if [ "$PROTO" == "vless" ]; then
     echo -e "Public Key: $PUBLIC_KEY"
     echo -e "Short ID  : $SHORT_ID"
 fi
-echo -e "${CYAN}====================================================${NC}"
+echo -e "${BLUE}====================================================${NC}"
 
 bash "$INSTALL_DIR/node/restart.sh"

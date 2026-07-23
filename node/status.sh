@@ -6,22 +6,22 @@ source "$INSTALL_DIR/lib/color.sh"
 
 function show_node_menu() {
     clear
-    echo -e "${CYAN}====================================================${NC}"
+    echo -e "${BLUE}====================================================${NC}"
     echo -e "${GREEN}             QUẢN LÝ NODE SING-BOX                  ${NC}"
-    echo -e "${CYAN}====================================================${NC}"
+    echo -e "${BLUE}====================================================${NC}"
 
     if systemctl is-active --quiet singbox; then
-        echo -e "Trạng thái hiện tại: ${GREEN}Đang hoạt động (Running)${NC}"
+        echo -e "Trạng thái hiện tại: ${GREEN}Hoạt động (Running)${NC}"
     else
         echo -e "Trạng thái hiện tại: ${RED}Đã dừng (Stopped)${NC}"
     fi
 
-    echo -e "${CYAN}====================================================${NC}"
+    echo -e "${BLUE}====================================================${NC}"
     echo -e "${YELLOW} 1.${NC} Khởi động (Start)"
     echo -e "${YELLOW} 2.${NC} Dừng (Stop)"
     echo -e "${YELLOW} 3.${NC} Khởi động lại (Restart)"
-    echo -e "${YELLOW} 0.${NC} Quay lại menu chính"
-    echo -e "${CYAN}====================================================${NC}"
+    echo -e "${RED} 0.${NC} Quay lại menu chính"
+    echo -e "${BLUE}====================================================${NC}"
     read -p "Vui lòng chọn chức năng (0-3): " choice
 
     case $choice in

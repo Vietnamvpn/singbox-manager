@@ -6,15 +6,15 @@ source "$INSTALL_DIR/lib/color.sh"
 
 function show_user_menu() {
     clear
-    echo -e "${CYAN}====================================================${NC}"
+    echo -e "${BLUE}====================================================${NC}"
     echo -e "${GREEN}             QUẢN LÝ NGƯỜI DÙNG & NODE             ${NC}"
-    echo -e "${CYAN}====================================================${NC}"
+    echo -e "${BLUE}====================================================${NC}"
     echo -e "${YELLOW} 1.${NC} Thêm User / Node mới"
     echo -e "${YELLOW} 2.${NC} Xem Danh sách User / Node"
     echo -e "${YELLOW} 3.${NC} Xóa User / Node"
     echo -e "${YELLOW} 4.${NC} Xóa toàn bộ User / Node"
     echo -e "${RED} 0.${NC} Quay lại Menu chính"
-    echo -e "${CYAN}====================================================${NC}"
+    echo -e "${BLUE}====================================================${NC}"
     read -p "Vui lòng chọn chức năng (0-4): " uchoice
 
     case $uchoice in
@@ -47,13 +47,13 @@ function show_user_menu() {
 
 function show_update_menu() {
     clear
-    echo -e "${CYAN}====================================================${NC}"
+    echo -e "${BLUE}====================================================${NC}"
     echo -e "${GREEN}                 TÙY CHỌN CẬP NHẬT                  ${NC}"
-    echo -e "${CYAN}====================================================${NC}"
+    echo -e "${BLUE}====================================================${NC}"
     echo -e "${YELLOW} 1.${NC} Cập nhật Mã nguồn Script"
     echo -e "${YELLOW} 2.${NC} Cập nhật Sing-box Core"
     echo -e "${RED} 0.${NC} Quay lại Menu chính"
-    echo -e "${CYAN}====================================================${NC}"
+    echo -e "${BLUE}====================================================${NC}"
     read -p "Vui lòng chọn chức năng (0-2): " upchoice
 
     case $upchoice in

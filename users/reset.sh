@@ -5,6 +5,7 @@ INSTALL_DIR="/usr/local/singbox-manager"
 source "$INSTALL_DIR/lib/color.sh"
 CONFIG_FILE="$INSTALL_DIR/config/config.json"
 KEYS_FILE="$INSTALL_DIR/config/public_keys.json"
+DOMAINS_FILE="$INSTALL_DIR/config/domains.json"
 
 echo -e "${RED}CẢNH BÁO: Thao tác này sẽ XÓA TOÀN BỘ danh sách người dùng và các Node hiện có!${NC}"
 read -p "Bạn có chắc chắn muốn tiếp tục không? (y/n): " confirm
@@ -15,6 +16,9 @@ if [[ "$confirm" == "y" || "$confirm" == "Y" ]]; then
     
     # Reset file public_keys.json về JSON rỗng
     echo '{}' > "$KEYS_FILE"
+
+    # Reset file domains.json về JSON rỗng
+    echo '{}' > "$DOMAINS_FILE"
 
     echo -e "${GREEN}Đã xóa toàn bộ người dùng/Node. File cấu hình đã được làm sạch.${NC}"
     
