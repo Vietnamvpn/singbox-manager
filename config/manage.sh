@@ -66,8 +66,9 @@ function show_config_menu() {
             ;;
         3)
             echo -e "${YELLOW}Đang tối ưu cấu hình cho NAT VPS (Ưu tiên IPv6 / NAT64)...${NC}"
-            jq '(.outbounds[] | select(.tag == "direct")) += {"domain_strategy": "prefer_ipv6"}' "$CONFIG_FILE" > "${CONFIG_FILE}.tmp" && mv "${CONFIG_FILE}.tmp" "$CONFIG_FILE"
-            echo -e "${GREEN}Đã bổ sung 'domain_strategy': 'prefer_ipv6' cho outbound direct.${NC}"
+            # Gỡ bỏ domain_strategy cũ trong outbounds (để chữa lỗi 1.12+) và tạo khối DNS chuẩn mới
+            jq 'del(.outbounds[]?.domain_strategy) | .dns = {"servers": [{"tag": "default-dns", "address": "local", "strategy": "prefer_ipv6"}]}' "$CONFIG_FILE" > "${CONFIG_FILE}.tmp" && mv "${CONFIG_FILE}.tmp" "$CONFIG_FILE"
+            echo -e "${GREEN}Đã tối ưu cấu hình DNS ưu tiên IPv6 theo chuẩn Sing-box 1.12+.${NC}"
             check_and_restart
             read -p "Nhấn Enter để tiếp tục..." && show_config_menu
             ;;
