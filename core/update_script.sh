@@ -27,6 +27,7 @@ FILES=(
     "config/templates/hysteria2.json"
     "config/templates/tuic.json"
     "config/templates/vless.json"
+    "config/manage.sh"
     "users/add.sh"
     "users/delete.sh"
     "users/list.sh"
