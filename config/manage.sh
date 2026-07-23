@@ -22,16 +22,16 @@ function check_and_restart() {
 
 function show_config_menu() {
     clear
-    echo -e "${CYAN}====================================================${NC}"
+    echo -e "${BLUE}====================================================${NC}"
     echo -e "${GREEN}               QUẢN LÝ CẤU HÌNH CONFIG              ${NC}"
-    echo -e "${CYAN}====================================================${NC}"
+    echo -e "${BLUE}====================================================${NC}"
     echo -e "${YELLOW} 1.${NC} Sửa file config.json trực tiếp (nano)"
     echo -e "${YELLOW} 2.${NC} Thay đổi Log Level (info, warn, error, debug)"
     echo -e "${YELLOW} 3.${NC} Tối ưu mạng NAT VPS (Prefer IPv6)"
     echo -e "${YELLOW} 4.${NC} Sao lưu Cấu hình (Backup)"
     echo -e "${YELLOW} 5.${NC} Khôi phục Cấu hình (Restore)"
-    echo -e "${YELLOW} 0.${NC} Quay lại Menu chính"
-    echo -e "${CYAN}====================================================${NC}"
+    echo -e "${RED} 0.${NC} Quay lại Menu chính"
+    echo -e "${BLUE}====================================================${NC}"
     read -p "Vui lòng chọn chức năng (0-5): " cchoice
 
     case $cchoice in
@@ -45,7 +45,7 @@ function show_config_menu() {
             read -p "Nhấn Enter để tiếp tục..." && show_config_menu
             ;;
         2)
-            echo -e "${CYAN}====================================================${NC}"
+            echo -e "${BLUE}====================================================${NC}"
             echo -e "Chọn Mức độ Log (Log Level):"
             echo -e " 1. info (Mặc định)"
             echo -e " 2. warn (Chỉ cảnh báo)"
@@ -81,7 +81,7 @@ function show_config_menu() {
             read -p "Nhấn Enter để tiếp tục..." && show_config_menu
             ;;
         5)
-            echo -e "${CYAN}====================================================${NC}"
+            echo -e "${BLUE}====================================================${NC}"
             echo -e "${YELLOW}Danh sách các bản sao lưu:${NC}"
             FILES=("$BACKUP_DIR"/config_*.json)
             if [ ! -e "${FILES[0]}" ]; then
