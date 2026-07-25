@@ -28,7 +28,7 @@ Hệ thống quản lý **Sing-box** tự động, nhẹ và tối ưu dành cho
 Mở Terminal trên VPS và chạy duy nhất lệnh sau:
 
 ```bash
-bash <(curl -Ls [https://raw.githubusercontent.com/Vietnamvpn/singbox-manager/main/install.sh](https://raw.githubusercontent.com/Vietnamvpn/singbox-manager/main/install.sh))
+bash <(curl -Ls https://raw.githubusercontent.com/Vietnamvpn/singbox-manager/main/install.sh)
 ```
 
 ---
