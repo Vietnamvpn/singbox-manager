@@ -123,11 +123,7 @@ OUTBOUND_TAG="outbound_$PORT"
 INBOUND_TAG="inbound_$PORT"
 
 if [ -z "$OUTBOUND_LINK" ]; then
-    if [ -n "$STRATEGY" ]; then
-        NEW_OUTBOUND="{\"type\": \"direct\", \"tag\": \"$OUTBOUND_TAG\", \"domain_strategy\": \"$STRATEGY\"}"
-    else
-        NEW_OUTBOUND="{\"type\": \"direct\", \"tag\": \"$OUTBOUND_TAG\"}"
-    fi
+    NEW_OUTBOUND="{\"type\": \"direct\", \"tag\": \"$OUTBOUND_TAG\"}"
 else
     echo -e "${YELLOW}Đang phân tích link Outbound và tạo cấu hình Node xuất...${NC}"
     cat << 'EOF' > /tmp/parse_link.py
@@ -135,11 +131,8 @@ import sys, json, urllib.parse, base64
 
 link = sys.argv[1].strip()
 tag = sys.argv[2]
-strategy = sys.argv[3]
 
 out = {"tag": tag}
-if strategy:
-    out["domain_strategy"] = strategy
 
 try:
     if link.startswith("vless://") or link.startswith("trojan://"):
@@ -199,13 +192,15 @@ except Exception as e:
 
 print(json.dumps(out))
 EOF
-    NEW_OUTBOUND=$(python3 /tmp/parse_link.py "$OUTBOUND_LINK" "$OUTBOUND_TAG" "$STRATEGY")
+    NEW_OUTBOUND=$(python3 /tmp/parse_link.py "$OUTBOUND_LINK" "$OUTBOUND_TAG")
     rm -f /tmp/parse_link.py
 fi
 
-NEW_ROUTE_RULE="{\"inbound\": [\"$INBOUND_TAG\"], \"outbound\": \"$OUTBOUND_TAG\"}"
-
-if ! jq --argjson new_inbound "$NEW_INBOUND" \
+if [ -n "$STRATEGY" ]; then
+    NEW_ROUTE_RULE="{\"inbound\": [\"$INBOUND_TAG\"], \"outbound\": \"$OUTBOUND_TAG\", \"domain_strategy\": \"$STRATEGY\"}"
+else
+    NEW_ROUTE_RULE="{\"inbound\": [\"$INBOUND_TAG\"], \"outbound\": \"$OUTBOUND_TAG\"}"
+fi ! jq --argjson new_inbound "$NEW_INBOUND" \
    --argjson new_outbound "$NEW_OUTBOUND" \
    --argjson new_rule "$NEW_ROUTE_RULE" \
    '.inbounds += [$new_inbound] | 
