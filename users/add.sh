@@ -223,10 +223,10 @@ echo -e "${GREEN}Cấu hình hợp lệ. Đang khởi động lại...${NC}"
 bash "$INSTALL_DIR/node/restart.sh"
 
 sleep 2
-if systemctl is-active --quiet sing-box; then
+if systemctl is-active --quiet singbox; then
     echo -e "${GREEN}Thành công: Đã thêm node và Sing-box đang hoạt động bình thường!${NC}"
 else
-    echo -e "${RED}Lỗi nghiêm trọng: Sing-box không thể chạy. Dùng lệnh 'journalctl -u sing-box -e' để kiểm tra.${NC}"
+    echo -e "${RED}Lỗi nghiêm trọng: Sing-box không thể chạy. Dùng lệnh 'journalctl -u singbox -e' để kiểm tra.${NC}"
 fi
 
 echo -e "${BLUE}====================================================${NC}"
