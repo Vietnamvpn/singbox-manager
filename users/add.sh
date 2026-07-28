@@ -68,8 +68,8 @@ read -p "Lựa chọn (1-5) [Mặc định: 1]: " ip_choice
 case $ip_choice in
     2) STRATEGY="prefer_ipv4" ;;
     3) STRATEGY="prefer_ipv6" ;;
-    4) STRATEGY="only_ipv4" ;;
-    5) STRATEGY="only_ipv6" ;;
+    4) STRATEGY="ipv4_only" ;;
+    5) STRATEGY="ipv6_only" ;;
     *) STRATEGY="" ;;
 esac
 
