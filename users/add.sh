@@ -200,7 +200,9 @@ if [ -n "$STRATEGY" ]; then
     NEW_ROUTE_RULE="{\"inbound\": [\"$INBOUND_TAG\"], \"outbound\": \"$OUTBOUND_TAG\", \"domain_strategy\": \"$STRATEGY\"}"
 else
     NEW_ROUTE_RULE="{\"inbound\": [\"$INBOUND_TAG\"], \"outbound\": \"$OUTBOUND_TAG\"}"
-fi ! jq --argjson new_inbound "$NEW_INBOUND" \
+fi
+
+if ! jq --argjson new_inbound "$NEW_INBOUND" \
    --argjson new_outbound "$NEW_OUTBOUND" \
    --argjson new_rule "$NEW_ROUTE_RULE" \
    '.inbounds += [$new_inbound] | 
