@@ -122,9 +122,10 @@ NEW_INBOUND=$(cat "$TEMPLATE_FILE" | \
 OUTBOUND_TAG="outbound_$PORT"
 INBOUND_TAG="inbound_$PORT"
 
-if [ -z "$OUTBOUND_LINK" ]; then
-    NEW_OUTBOUND="{\"type\": \"direct\", \"tag\": \"$OUTBOUND_TAG\"}"
-else
+NEW_OUTBOUND="null"
+NEW_ROUTE_RULE="null"
+
+if [ -n "$OUTBOUND_LINK" ]; then
     echo -e "${YELLOW}Đang phân tích link Outbound và tạo cấu hình Node xuất...${NC}"
     cat << 'EOF' > /tmp/parse_link.py
 import sys, json, urllib.parse, base64
@@ -186,36 +187,38 @@ try:
         elif net == "grpc":
             out["transport"] = {"type": "grpc", "service_name": v.get("path", "")}
     else:
-        out["type"] = "direct"
+        out = None
 except Exception as e:
-    out["type"] = "direct"
+    out = None
 
-print(json.dumps(out))
+if out:
+    print(json.dumps(out))
+else:
+    print("null")
 EOF
     NEW_OUTBOUND=$(python3 /tmp/parse_link.py "$OUTBOUND_LINK" "$OUTBOUND_TAG")
     rm -f /tmp/parse_link.py
-fi
 
-NEW_ROUTE_RULE="{\"inbound\": [\"$INBOUND_TAG\"], \"outbound\": \"$OUTBOUND_TAG\"}"
-
-if [ -n "$STRATEGY" ]; then
-    NEW_DNS_RULE="{\"inbound\": [\"$INBOUND_TAG\"], \"strategy\": \"$STRATEGY\"}"
-else
-    NEW_DNS_RULE="null"
+    if [ "$NEW_OUTBOUND" != "null" ] && [ -n "$NEW_OUTBOUND" ]; then
+        if [ -n "$STRATEGY" ]; then
+            NEW_ROUTE_RULE="{\"inbound\": [\"$INBOUND_TAG\"], \"outbound\": \"$OUTBOUND_TAG\", \"domain_strategy\": \"$STRATEGY\"}"
+        else
+            NEW_ROUTE_RULE="{\"inbound\": [\"$INBOUND_TAG\"], \"outbound\": \"$OUTBOUND_TAG\"}"
+        fi
+    fi
+elif [ -n "$STRATEGY" ]; then
+    NEW_ROUTE_RULE="{\"inbound\": [\"$INBOUND_TAG\"], \"outbound\": \"direct\", \"domain_strategy\": \"$STRATEGY\"}"
 fi
 
 if ! jq --argjson new_inbound "$NEW_INBOUND" \
    --argjson new_outbound "$NEW_OUTBOUND" \
    --argjson new_rule "$NEW_ROUTE_RULE" \
-   --argjson new_dns_rule "$NEW_DNS_RULE" \
    '.inbounds += [$new_inbound] | 
-    .outbounds += [$new_outbound] | 
-    if .route == null then .route = {"rules":[]} else . end | 
-    .route.rules = [$new_rule] + .route.rules | 
-    if $new_dns_rule != null then 
-        if .dns == null then .dns = {"rules":[]} else . end | 
-        if .dns.rules == null then .dns.rules = [] else . end | 
-        .dns.rules = [$new_dns_rule] + .dns.rules 
+    if $new_outbound != null then .outbounds += [$new_outbound] else . end | 
+    if $new_rule != null then 
+        if .route == null then .route = {"rules":[]} else . end | 
+        if .route.rules == null then .route.rules = [] else . end | 
+        .route.rules = [$new_rule] + .route.rules 
     else . end' "$CONFIG_FILE" > "${CONFIG_FILE}.tmp"; then
     echo -e "${RED}Lỗi: Cập nhật config.json thất bại. Kiểm tra lại cú pháp JSON của tệp mẫu.${NC}"
     exit 1
@@ -244,7 +247,7 @@ echo -e "Port      : $PORT"
 echo -e "Username  : $USERNAME"
 [ -n "$NODE_DOMAIN" ] && echo -e "Domain    : $NODE_DOMAIN"
 echo -e "SNI       : $SNI"
-if [ -n "$OUTBOUND_LINK" ]; then
+if [ -n "$OUTBOUND_LINK" ] && [ "$NEW_OUTBOUND" != "null" ]; then
     echo -e "Outbound  : Đã kích hoạt Proxy (Chain)"
 else
     echo -e "Outbound  : Trực tiếp (Direct)"
