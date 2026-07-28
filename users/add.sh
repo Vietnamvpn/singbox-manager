@@ -200,26 +200,20 @@ EOF
     rm -f /tmp/parse_link.py
 
     if [ "$NEW_OUTBOUND" != "null" ] && [ -n "$NEW_OUTBOUND" ]; then
-        if [ -n "$STRATEGY" ]; then
-            NEW_ROUTE_RULE="{\"inbound\": [\"$INBOUND_TAG\"], \"outbound\": \"$OUTBOUND_TAG\", \"domain_strategy\": \"$STRATEGY\"}"
-        else
-            NEW_ROUTE_RULE="{\"inbound\": [\"$INBOUND_TAG\"], \"outbound\": \"$OUTBOUND_TAG\"}"
-        fi
+        NEW_ROUTE_RULE="{\"inbound\": [\"$INBOUND_TAG\"], \"outbound\": \"$OUTBOUND_TAG\"}"
     fi
-elif [ -n "$STRATEGY" ]; then
-    NEW_ROUTE_RULE="{\"inbound\": [\"$INBOUND_TAG\"], \"outbound\": \"direct\", \"domain_strategy\": \"$STRATEGY\"}"
 fi
 
 if ! jq --argjson new_inbound "$NEW_INBOUND" \
    --argjson new_outbound "$NEW_OUTBOUND" \
    --argjson new_rule "$NEW_ROUTE_RULE" \
+   --arg strategy "$STRATEGY" \
    '.inbounds += [$new_inbound] | 
     if $new_outbound != null then .outbounds += [$new_outbound] else . end | 
-    if $new_rule != null then 
-        if .route == null then .route = {"rules":[]} else . end | 
-        if .route.rules == null then .route.rules = [] else . end | 
-        .route.rules = [$new_rule] + .route.rules 
-    else . end' "$CONFIG_FILE" > "${CONFIG_FILE}.tmp"; then
+    if .route == null then .route = {"rules":[]} else . end | 
+    if .route.rules == null then .route.rules = [] else . end | 
+    if $new_rule != null then .route.rules = [$new_rule] + .route.rules else . end | 
+    if $strategy != "" then .route.domain_strategy = $strategy else . end' "$CONFIG_FILE" > "${CONFIG_FILE}.tmp"; then
     echo -e "${RED}Lỗi: Cập nhật config.json thất bại. Kiểm tra lại cú pháp JSON của tệp mẫu.${NC}"
     exit 1
 fi
