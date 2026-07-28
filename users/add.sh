@@ -197,10 +197,9 @@ EOF
 fi
 
 if [ -n "$STRATEGY" ]; then
-    NEW_ROUTE_RULE="{\"inbound\": [\"$INBOUND_TAG\"], \"outbound\": \"$OUTBOUND_TAG\", \"domain_strategy\": \"$STRATEGY\"}"
-else
-    NEW_ROUTE_RULE="{\"inbound\": [\"$INBOUND_TAG\"], \"outbound\": \"$OUTBOUND_TAG\"}"
+    NEW_OUTBOUND=$(echo "$NEW_OUTBOUND" | jq --arg ds "$STRATEGY" '.domain_strategy = $ds')
 fi
+NEW_ROUTE_RULE="{\"inbound\": [\"$INBOUND_TAG\"], \"outbound\": \"$OUTBOUND_TAG\"}"
 
 if ! jq --argjson new_inbound "$NEW_INBOUND" \
    --argjson new_outbound "$NEW_OUTBOUND" \
