@@ -58,6 +58,11 @@ echo "$USERNAMES" | while read -r username; do
             [ -n "$custom_domain" ] && [ "$custom_domain" != "null" ] && HOST_ADDR="$custom_domain"
         fi
 
+        # Tự động bọc cặp dấu [] nếu HOST_ADDR là địa chỉ IPv6
+        if [[ "$HOST_ADDR" == *:* ]] && [[ "$HOST_ADDR" != \[*\] ]]; then
+            HOST_ADDR="[${HOST_ADDR}]"
+        fi
+
         case "$type" in
             vless)
                 VLESS_LINK="vless://${uuid}@${HOST_ADDR}:${port}?type=grpc&security=reality&fp=chrome&sni=${sni}"
