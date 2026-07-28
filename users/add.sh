@@ -196,18 +196,27 @@ EOF
     rm -f /tmp/parse_link.py
 fi
 
-if [ -n "$STRATEGY" ]; then
-    NEW_OUTBOUND=$(echo "$NEW_OUTBOUND" | jq --arg ds "$STRATEGY" '.domain_strategy = $ds')
-fi
 NEW_ROUTE_RULE="{\"inbound\": [\"$INBOUND_TAG\"], \"outbound\": \"$OUTBOUND_TAG\"}"
+
+if [ -n "$STRATEGY" ]; then
+    NEW_DNS_RULE="{\"inbound\": [\"$INBOUND_TAG\"], \"strategy\": \"$STRATEGY\"}"
+else
+    NEW_DNS_RULE="null"
+fi
 
 if ! jq --argjson new_inbound "$NEW_INBOUND" \
    --argjson new_outbound "$NEW_OUTBOUND" \
    --argjson new_rule "$NEW_ROUTE_RULE" \
+   --argjson new_dns_rule "$NEW_DNS_RULE" \
    '.inbounds += [$new_inbound] | 
     .outbounds += [$new_outbound] | 
     if .route == null then .route = {"rules":[]} else . end | 
-    .route.rules = [$new_rule] + .route.rules' "$CONFIG_FILE" > "${CONFIG_FILE}.tmp"; then
+    .route.rules = [$new_rule] + .route.rules | 
+    if $new_dns_rule != null then 
+        if .dns == null then .dns = {"rules":[]} else . end | 
+        if .dns.rules == null then .dns.rules = [] else . end | 
+        .dns.rules = [$new_dns_rule] + .dns.rules 
+    else . end' "$CONFIG_FILE" > "${CONFIG_FILE}.tmp"; then
     echo -e "${RED}Lỗi: Cập nhật config.json thất bại. Kiểm tra lại cú pháp JSON của tệp mẫu.${NC}"
     exit 1
 fi
