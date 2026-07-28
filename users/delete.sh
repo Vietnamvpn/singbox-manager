@@ -17,11 +17,17 @@ if [ "$DEL_PORT" == "0" ] || [ -z "$DEL_PORT" ]; then
 fi
 
 # Kiểm tra xem Port có tồn tại không
-EXISTS=$(jq "[.inbounds[] | select(.listen_port == $DEL_PORT)] | length" "$CONFIG_FILE")
+EXISTS=$(jq "[.inbounds[] | select(.listen_port == ($DEL_PORT|tonumber) or .listen_port == \"$DEL_PORT\")] | length" "$CONFIG_FILE")
 
 if [ "$EXISTS" -gt 0 ]; then
-    # Lọc bỏ inbound có listen_port trùng khớp
-    jq "del(.inbounds[] | select(.listen_port == $DEL_PORT))" "$CONFIG_FILE" > "${CONFIG_FILE}.tmp" && mv "${CONFIG_FILE}.tmp" "$CONFIG_FILE"
+    # Lọc bỏ inbound, outbound và route rule liên quan đến Port
+    jq --arg port "$DEL_PORT" \
+       --arg out_tag "outbound_$DEL_PORT" \
+       --arg in_tag "inbound_$DEL_PORT" \
+       'del(.inbounds[]? | select(.listen_port == ($port|tonumber) or .listen_port == $port)) |
+        del(.outbounds[]? | select(.tag == $out_tag)) |
+        del(.route.rules[]? | select(.outbound == $out_tag or (.inbound != null and (.inbound | index($in_tag)))))' \
+       "$CONFIG_FILE" > "${CONFIG_FILE}.tmp" && mv "${CONFIG_FILE}.tmp" "$CONFIG_FILE"
 
     # Xóa Public Key tương ứng trong public_keys.json nếu có
     if [ -f "$KEYS_FILE" ]; then

@@ -8,6 +8,27 @@
     {
       "type": "direct",
       "tag": "direct"
+    },
+    {
+      "type": "block",
+      "tag": "block"
     }
-  ]
+  ],
+  "route": {
+    "rules": [
+      {
+        "domain_suffix": [
+          "doubleclick.net",
+          "googleadservices.com",
+          "google-analytics.com"
+        ],
+        "domain_keyword": [
+          "adservice",
+          "tracker"
+        ],
+        "outbound": "block"
+      }
+    ],
+    "final": "direct"
+  }
 }

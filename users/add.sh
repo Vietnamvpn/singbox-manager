@@ -9,7 +9,7 @@ DOMAINS_FILE="$INSTALL_DIR/config/domains.json"
 
 if [ ! -f "$CONFIG_FILE" ]; then
     echo -e "${YELLOW}Khởi tạo config.json cơ bản...${NC}"
-    echo '{"log": {"level": "info"}, "inbounds": [], "outbounds": [{"type": "direct", "tag": "direct"}]}' > "$CONFIG_FILE"
+    echo '{"log": {"level": "info"}, "inbounds": [], "outbounds": [{"type": "direct", "tag": "direct"}], "route": {"rules": [], "final": "direct"}}' > "$CONFIG_FILE"
 fi
 
 if [ ! -f "$KEYS_FILE" ]; then
@@ -36,7 +36,7 @@ case $proto_choice in
     2) PROTO="hysteria2" ;;
     3) PROTO="tuic" ;;
     0) exit 0 ;;
-    *) echo -e "${RED}Lựa chọn không hợp lệ!${NC}"; exit 1 ;;
+    *) echo -e "${RED}Lỗi: Lựa chọn không hợp lệ!${NC}"; exit 1 ;;
 esac
 
 TEMPLATE_FILE="$INSTALL_DIR/config/templates/${PROTO}.json"
@@ -47,16 +47,42 @@ if [ ! -f "$TEMPLATE_FILE" ]; then
 fi
 
 read -p "Nhập Port ($PROTO): " PORT
-read -p "Nhập Tên người dùng: " USERNAME
+
+if jq -e --arg port "$PORT" '.inbounds[] | select(.listen_port == ($port|tonumber) or .listen_port == $port)' "$CONFIG_FILE" > /dev/null; then
+    echo -e "${RED}Lỗi: Port $PORT đã tồn tại trong cấu hình! Vui lòng chọn Port khác.${NC}"
+    exit 1
+fi
+
+USERNAME="admin"
 read -p "Nhập Domain hiển thị hoặc để trống: " NODE_DOMAIN
 read -p "Nhập SNI nếu có: " SNI
 
-# Lưu Domain hiển thị nếu người dùng nhập
+echo -e "\n${YELLOW}Chọn chiến lược mạng IP đầu ra (Domain Strategy):${NC}"
+echo "1. Mặc định (Cả IPv4 & IPv6)"
+echo "2. Ưu tiên IPv4"
+echo "3. Ưu tiên IPv6"
+echo "4. Chỉ xuất ra IPv4"
+echo "5. Chỉ xuất ra IPv6"
+read -p "Lựa chọn (1-5) [Mặc định: 1]: " ip_choice
+
+case $ip_choice in
+    2) STRATEGY="prefer_ipv4" ;;
+    3) STRATEGY="prefer_ipv6" ;;
+    4) STRATEGY="ipv4_only" ;;
+    5) STRATEGY="ipv6_only" ;;
+    *) STRATEGY="" ;;
+esac
+
+echo -e "\n${YELLOW}Cấu hình Routing / Chain Node:${NC}"
+read -p "Nhập link Outbound proxy (vless://, vmess://, trojan://) hoặc để trống (trực tiếp qua VPS): " OUTBOUND_LINK
+
 if [ -n "$NODE_DOMAIN" ]; then
-    jq --arg port "$PORT" --arg domain "$NODE_DOMAIN" '.[$port] = $domain' "$DOMAINS_FILE" > "${DOMAINS_FILE}.tmp" && mv "${DOMAINS_FILE}.tmp" "$DOMAINS_FILE"
+    if ! jq --arg port "$PORT" --arg domain "$NODE_DOMAIN" '.[$port] = $domain' "$DOMAINS_FILE" > "${DOMAINS_FILE}.tmp"; then
+         echo -e "${RED}Lỗi: Không thể cập nhật $DOMAINS_FILE.${NC}"; exit 1
+    fi
+    mv "${DOMAINS_FILE}.tmp" "$DOMAINS_FILE"
 fi
 
-# Nếu SNI để trống, tự động chọn ngẫu nhiên từ danh sách
 if [ -z "$SNI" ]; then
     SNI_LIST=("apple.com" "microsoft.com" "dl.google.com" "www.cloudflare.com" "gateway.icloud.com" "aws.amazon.com" "www.lovelive-anime.jp")
     SNI=${SNI_LIST[$RANDOM % ${#SNI_LIST[@]}]}
@@ -64,7 +90,6 @@ if [ -z "$SNI" ]; then
 fi
 
 UUID=$(cat /proc/sys/kernel/random/uuid)
-# Mật khẩu Hysteria2/TUIC dài chuẩn định dạng UUID (36 ký tự)
 PASSWORD=$(cat /proc/sys/kernel/random/uuid)
 PRIVATE_KEY=""
 PUBLIC_KEY=""
@@ -75,11 +100,12 @@ if [ "$PROTO" == "vless" ]; then
     KEYPAIR=$(/usr/local/bin/sing-box generate reality-keypair)
     PRIVATE_KEY=$(echo "$KEYPAIR" | grep "PrivateKey" | awk '{print $2}')
     PUBLIC_KEY=$(echo "$KEYPAIR" | grep "PublicKey" | awk '{print $2}')
-    # Sinh Short ID 8 ký tự Hex ngẫu nhiên
     SHORT_ID=$(openssl rand -hex 4 2>/dev/null || tr -dc 'a-f0-9' </dev/urandom | head -c 8)
 
-    # Lưu Public Key vào file public_keys.json riêng
-    jq --arg port "$PORT" --arg pbk "$PUBLIC_KEY" '.[$port] = $pbk' "$KEYS_FILE" > "${KEYS_FILE}.tmp" && mv "${KEYS_FILE}.tmp" "$KEYS_FILE"
+    if ! jq --arg port "$PORT" --arg pbk "$PUBLIC_KEY" '.[$port] = $pbk' "$KEYS_FILE" > "${KEYS_FILE}.tmp"; then
+         echo -e "${RED}Lỗi: Không thể ghi vào $KEYS_FILE.${NC}"; exit 1
+    fi
+    mv "${KEYS_FILE}.tmp" "$KEYS_FILE"
 fi
 
 NEW_INBOUND=$(cat "$TEMPLATE_FILE" | \
@@ -93,15 +119,132 @@ NEW_INBOUND=$(cat "$TEMPLATE_FILE" | \
     sed "s/0123456789abcdef/$SHORT_ID/g" | \
     sed "s/SHORT_ID/$SHORT_ID/g")
 
-jq --argjson new_inbound "$NEW_INBOUND" '.inbounds += [$new_inbound]' "$CONFIG_FILE" > "${CONFIG_FILE}.tmp" && mv "${CONFIG_FILE}.tmp" "$CONFIG_FILE"
+OUTBOUND_TAG="outbound_$PORT"
+INBOUND_TAG="inbound_$PORT"
 
-echo -e "${GREEN}Đã thêm thành công!${NC}"
+if [ -z "$OUTBOUND_LINK" ]; then
+    if [ -n "$STRATEGY" ]; then
+        NEW_OUTBOUND="{\"type\": \"direct\", \"tag\": \"$OUTBOUND_TAG\", \"domain_strategy\": \"$STRATEGY\"}"
+    else
+        NEW_OUTBOUND="{\"type\": \"direct\", \"tag\": \"$OUTBOUND_TAG\"}"
+    fi
+else
+    echo -e "${YELLOW}Đang phân tích link Outbound và tạo cấu hình Node xuất...${NC}"
+    cat << 'EOF' > /tmp/parse_link.py
+import sys, json, urllib.parse, base64
+
+link = sys.argv[1].strip()
+tag = sys.argv[2]
+strategy = sys.argv[3]
+
+out = {"tag": tag}
+if strategy:
+    out["domain_strategy"] = strategy
+
+try:
+    if link.startswith("vless://") or link.startswith("trojan://"):
+        parsed = urllib.parse.urlparse(link)
+        qs = urllib.parse.parse_qs(parsed.query)
+        out["type"] = parsed.scheme
+        out["server"] = parsed.hostname
+        out["server_port"] = int(parsed.port)
+        if parsed.scheme == "vless":
+            out["uuid"] = parsed.username
+        else:
+            out["password"] = parsed.username
+        
+        sec = qs.get("security", [""])[0]
+        if sec == "tls":
+            out["tls"] = {"enabled": True, "server_name": qs.get("sni", [parsed.hostname])[0], "insecure": False}
+        elif sec == "reality":
+            out["tls"] = {
+                "enabled": True, 
+                "server_name": qs.get("sni", [parsed.hostname])[0],
+                "reality": {
+                    "enabled": True,
+                    "public_key": qs.get("pbk", [""])[0],
+                    "short_id": qs.get("sid", [""])[0]
+                }
+            }
+        
+        net = qs.get("type", ["tcp"])[0]
+        if net == "ws":
+            out["transport"] = {"type": "ws", "path": qs.get("path", ["/"])[0], "headers": {"Host": qs.get("host", [parsed.hostname])[0]}}
+        elif net == "grpc":
+            out["transport"] = {"type": "grpc", "service_name": qs.get("serviceName", [""])[0]}
+
+    elif link.startswith("vmess://"):
+        b64 = link[8:]
+        b64 += "=" * ((4 - len(b64) % 4) % 4)
+        v = json.loads(base64.urlsafe_b64decode(b64).decode("utf-8"))
+        out["type"] = "vmess"
+        out["server"] = v.get("add")
+        out["server_port"] = int(v.get("port"))
+        out["uuid"] = v.get("id")
+        out["security"] = "auto"
+        out["alter_id"] = int(v.get("aid", 0))
+        
+        if str(v.get("tls")) == "tls":
+            out["tls"] = {"enabled": True, "server_name": str(v.get("sni", [v.get("add")])[0]), "insecure": False}
+            
+        net = str(v.get("net", "tcp"))
+        if net == "ws":
+            out["transport"] = {"type": "ws", "path": v.get("path", "/"), "headers": {"Host": v.get("host", v.get("add"))}}
+        elif net == "grpc":
+            out["transport"] = {"type": "grpc", "service_name": v.get("path", "")}
+    else:
+        out["type"] = "direct"
+except Exception as e:
+    out["type"] = "direct"
+
+print(json.dumps(out))
+EOF
+    NEW_OUTBOUND=$(python3 /tmp/parse_link.py "$OUTBOUND_LINK" "$OUTBOUND_TAG" "$STRATEGY")
+    rm -f /tmp/parse_link.py
+fi
+
+NEW_ROUTE_RULE="{\"inbound\": [\"$INBOUND_TAG\"], \"outbound\": \"$OUTBOUND_TAG\"}"
+
+if ! jq --argjson new_inbound "$NEW_INBOUND" \
+   --argjson new_outbound "$NEW_OUTBOUND" \
+   --argjson new_rule "$NEW_ROUTE_RULE" \
+   '.inbounds += [$new_inbound] | 
+    .outbounds += [$new_outbound] | 
+    if .route == null then .route = {"rules":[]} else . end | 
+    .route.rules = [$new_rule] + .route.rules' "$CONFIG_FILE" > "${CONFIG_FILE}.tmp"; then
+    echo -e "${RED}Lỗi: Cập nhật config.json thất bại. Kiểm tra lại cú pháp JSON của tệp mẫu.${NC}"
+    exit 1
+fi
+mv "${CONFIG_FILE}.tmp" "$CONFIG_FILE"
+
+echo -e "${YELLOW}Kiểm tra tính hợp lệ của cấu hình Sing-box...${NC}"
+if ! /usr/local/bin/sing-box check -c "$CONFIG_FILE"; then
+    echo -e "${RED}Lỗi cú pháp JSON: Sing-box từ chối cấu hình! Đã dừng tiến trình.${NC}"
+    exit 1
+fi
+
+echo -e "${GREEN}Cấu hình hợp lệ. Đang khởi động lại...${NC}"
+bash "$INSTALL_DIR/node/restart.sh"
+
+sleep 2
+if systemctl is-active --quiet sing-box; then
+    echo -e "${GREEN}Thành công: Đã thêm node và Sing-box đang hoạt động bình thường!${NC}"
+else
+    echo -e "${RED}Lỗi nghiêm trọng: Sing-box không thể chạy. Dùng lệnh 'journalctl -u sing-box -e' để kiểm tra.${NC}"
+fi
+
 echo -e "${BLUE}====================================================${NC}"
 echo -e "Giao thức : $PROTO"
 echo -e "Port      : $PORT"
 echo -e "Username  : $USERNAME"
 [ -n "$NODE_DOMAIN" ] && echo -e "Domain    : $NODE_DOMAIN"
 echo -e "SNI       : $SNI"
+if [ -n "$OUTBOUND_LINK" ]; then
+    echo -e "Outbound  : Đã kích hoạt Proxy (Chain)"
+else
+    echo -e "Outbound  : Trực tiếp (Direct)"
+fi
+[ -n "$STRATEGY" ] && echo -e "IP Ưu tiên: $STRATEGY"
 [[ "$PROTO" == "vless" || "$PROTO" == "tuic" ]] && echo -e "UUID      : $UUID"
 [[ "$PROTO" == "hysteria2" || "$PROTO" == "tuic" ]] && echo -e "Password  : $PASSWORD"
 if [ "$PROTO" == "vless" ]; then
@@ -109,5 +252,3 @@ if [ "$PROTO" == "vless" ]; then
     echo -e "Short ID  : $SHORT_ID"
 fi
 echo -e "${BLUE}====================================================${NC}"
-
-bash "$INSTALL_DIR/node/restart.sh"
