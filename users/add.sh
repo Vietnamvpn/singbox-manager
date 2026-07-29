@@ -208,11 +208,19 @@ try:
         out["type"] = "tuic"
         out["server"] = parsed.hostname
         out["server_port"] = int(parsed.port)
-        out["uuid"] = parsed.username
-        out["password"] = parsed.password if parsed.password else qs.get("password", [""])[0]
         
-        insecure_val = qs.get("insecure", ["0"])[0]
-        is_insecure = True if insecure_val in ["1", "true", "True"] else False
+        # Giải mã URL để tách đúng UUID và Password nếu bị dính ký tự mã hóa %3A
+        raw_user = urllib.parse.unquote(parsed.username) if parsed.username else ""
+        if ":" in raw_user:
+            parts = raw_user.split(":", 1)
+            out["uuid"] = parts[0]
+            out["password"] = parts[1]
+        else:
+            out["uuid"] = raw_user
+            out["password"] = urllib.parse.unquote(parsed.password) if parsed.password else qs.get("password", [""])[0]
+        
+        insecure_val = qs.get("insecure", [qs.get("allowInsecure", ["0"])])[0]
+        is_insecure = True if insecure_val in ["1", "true", "True", "anauthorized"] else False
         sni_val = qs.get("sni", [parsed.hostname])[0]
         congestion_val = qs.get("congestion_control", [qs.get("cc", ["bbr"])])[0]
 
