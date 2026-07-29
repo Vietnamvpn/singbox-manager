@@ -67,7 +67,7 @@ function show_config_menu() {
         3)
             echo -e "${YELLOW}Đang tối ưu cấu hình cho NAT VPS (Ưu tiên IPv6 / NAT64)...${NC}"
             # Đưa strategy ra cấp độ gốc của dns theo đúng chuẩn Sing-box
-            jq 'del(.outbounds[]?.domain_strategy) | .dns = {"strategy": "prefer_ipv6", "servers": [{"type": "local", "tag": "default-dns"}]}' "$CONFIG_FILE" > "${CONFIG_FILE}.tmp" && mv "${CONFIG_FILE}.tmp" "$CONFIG_FILE"
+            jq 'del(.outbounds[]?.domain_strategy) | .dns = {"strategy": "prefer_ipv6", "servers": [{"address": "local", "tag": "default-dns"}]}' "$CONFIG_FILE" > "${CONFIG_FILE}.tmp" && mv "${CONFIG_FILE}.tmp" "$CONFIG_FILE"
             echo -e "${GREEN}Đã tối ưu cấu hình DNS ưu tiên IPv6 thành công.${NC}"
             check_and_restart
             read -p "Nhấn Enter để tiếp tục..." && show_config_menu

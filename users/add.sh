@@ -104,7 +104,7 @@ NEW_INBOUND=$(cat "$TEMPLATE_FILE" | \
     sed "s/SHORT_ID/$SHORT_ID/g")
 
 OUTBOUND_TAG="outbound_$PORT"
-INBOUND_TAG="inbound_$PORT"
+INBOUND_TAG=$(echo "$NEW_INBOUND" | jq -r '.tag')
 
 NEW_OUTBOUND="null"
 NEW_ROUTE_RULE="null"
