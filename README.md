@@ -98,7 +98,8 @@ vvc
 │   └── service.sh              # Cấu hình systemd service
 ├── config/
 │   ├── config.json             # File cấu hình hoạt động của Sing-box
-│   └── templates/              # File mẫu JSON (VLESS, Hy2, TUIC)
+|   ├── templates/              # File mẫu JSON (VLESS, Hy2, TUIC)
+│   └── manage.sh               # Quản lý Cấu hình Config
 ├── users/
 │   ├── add.sh                  # Thêm Node/User
 │   ├── delete.sh               # Xóa Node/User theo Port
