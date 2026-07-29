@@ -106,7 +106,7 @@ function show_menu() {
     echo -e "${YELLOW} 2.${NC} Quản lý Node"
     echo -e "${YELLOW} 3.${NC} Quản lý Cấu hình Config"
     echo -e "${YELLOW} 4.${NC} Cập nhật Hệ thống"
-    echo -e "${YELLOW} 5.${NC} Gỡ cài đặt hệ thống"
+    echo -e "${YELLOW} 5.${NC} ${RED}Gỡ cài đặt hệ thống${NC}"
     echo -e "${RED} 0.${NC} Thoát"
     echo -e "${BLUE}============================================================${NC}"
     read -p "Vui lòng chọn chức năng (0-5): " choice
