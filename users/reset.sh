@@ -11,8 +11,8 @@ echo -e "${RED}CẢNH BÁO: Thao tác này sẽ XÓA TOÀN BỘ danh sách ngư�
 read -p "Bạn có chắc chắn muốn tiếp tục không? (y/n): " confirm
 
 if [[ "$confirm" == "y" || "$confirm" == "Y" ]]; then
-    # Reset mảng inbounds về rỗng
-    jq '.inbounds = []' "$CONFIG_FILE" > "${CONFIG_FILE}.tmp" && mv "${CONFIG_FILE}.tmp" "$CONFIG_FILE"
+    # Reset mảng inbounds, outbounds và route.rules về rỗng
+    jq '.inbounds = [] | .outbounds = [] | .route.rules = []' "$CONFIG_FILE" > "${CONFIG_FILE}.tmp" && mv "${CONFIG_FILE}.tmp" "$CONFIG_FILE"
     
     # Reset file public_keys.json về JSON rỗng
     echo '{}' > "$KEYS_FILE"
