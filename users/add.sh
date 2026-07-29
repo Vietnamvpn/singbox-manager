@@ -46,11 +46,21 @@ if [ ! -f "$TEMPLATE_FILE" ]; then
     exit 1
 fi
 
-read -p "Nhập Port ($PROTO): " PORT
+read -p "Nhập Port ($PROTO) (để trống để tạo ngẫu nhiên 2000-6000): " PORT
 
-if jq -e --arg port "$PORT" '.inbounds[] | select(.listen_port == ($port|tonumber) or .listen_port == $port)' "$CONFIG_FILE" > /dev/null; then
-    echo -e "${RED}Lỗi: Port $PORT đã tồn tại trong cấu hình! Vui lòng chọn Port khác.${NC}"
-    exit 1
+if [ -z "$PORT" ]; then
+    while true; do
+        PORT=$((RANDOM % 4001 + 2000))
+        if ! jq -e --arg port "$PORT" '.inbounds[] | select(.listen_port == ($port|tonumber) or .listen_port == $port)' "$CONFIG_FILE" > /dev/null 2>&1; then
+            break
+        fi
+    done
+    echo -e "${YELLOW}-> Tự động chọn Port ngẫu nhiên: ${GREEN}$PORT${NC}"
+else
+    if jq -e --arg port "$PORT" '.inbounds[] | select(.listen_port == ($port|tonumber) or .listen_port == $port)' "$CONFIG_FILE" > /dev/null; then
+        echo -e "${RED}Lỗi: Port $PORT đã tồn tại trong cấu hình! Vui lòng chọn Port khác.${NC}"
+        exit 1
+    fi
 fi
 
 USERNAME="admin"
