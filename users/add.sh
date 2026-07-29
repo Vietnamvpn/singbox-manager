@@ -57,8 +57,8 @@ USERNAME="admin"
 read -p "Nhập Domain hiển thị hoặc để trống: " NODE_DOMAIN
 read -p "Nhập SNI nếu có: " SNI
 
-echo -e "\n${YELLOW}Cấu hình Routing / Chain Node:${NC}"
-read -p "Nhập link Outbound proxy (vless://, vmess://, trojan://, hysteria2://, tuic://) hoặc để trống (trực tiếp qua VPS): " OUTBOUND_LINK
+echo -e "\n${YELLOW}Cấu hình Routing / Chain Node, nhập link (vless://, vmess://, trojan://) để trống sẽ kết nối trực tiếp qua VPS. ${NC}"
+read -p "Nhập link Outbound : " OUTBOUND_LINK
 
 if [ -n "$NODE_DOMAIN" ]; then
     if ! jq --arg port "$PORT" --arg domain "$NODE_DOMAIN" '.[$port] = $domain' "$DOMAINS_FILE" > "${DOMAINS_FILE}.tmp"; then
@@ -132,7 +132,7 @@ try:
             out["password"] = parsed.username
         
         sec = qs.get("security", [""])[0]
-        fp = qs.get("fp", ["chrome"])[0]
+        fp = qs.get("fp", ["chrome"])[0] # Lấy fingerprint từ link, mặc định chrome nếu không có
         
         if sec == "tls":
             out["tls"] = {
@@ -183,53 +183,6 @@ try:
             out["transport"] = {"type": "ws", "path": v.get("path", "/"), "headers": {"Host": v.get("host", v.get("add"))}}
         elif net == "grpc":
             out["transport"] = {"type": "grpc", "service_name": v.get("path", "")}
-
-    elif link.startswith("hysteria2://") or link.startswith("hy2://"):
-        parsed = urllib.parse.urlparse(link)
-        qs = urllib.parse.parse_qs(parsed.query)
-        out["type"] = "hysteria2"
-        out["server"] = parsed.hostname
-        out["server_port"] = int(parsed.port)
-        out["password"] = parsed.username
-        
-        insecure_val = qs.get("insecure", ["0"])[0]
-        is_insecure = True if insecure_val in ["1", "true", "True"] else False
-        sni_val = qs.get("sni", [parsed.hostname])[0]
-        
-        out["tls"] = {
-            "enabled": True,
-            "server_name": sni_val,
-            "insecure": is_insecure
-        }
-
-    elif link.startswith("tuic://"):
-        parsed = urllib.parse.urlparse(link)
-        qs = urllib.parse.parse_qs(parsed.query)
-        out["type"] = "tuic"
-        out["server"] = parsed.hostname
-        out["server_port"] = int(parsed.port)
-        
-        # Giải mã URL để tách đúng UUID và Password nếu bị dính ký tự mã hóa %3A
-        raw_user = urllib.parse.unquote(parsed.username) if parsed.username else ""
-        if ":" in raw_user:
-            parts = raw_user.split(":", 1)
-            out["uuid"] = parts[0]
-            out["password"] = parts[1]
-        else:
-            out["uuid"] = raw_user
-            out["password"] = urllib.parse.unquote(parsed.password) if parsed.password else qs.get("password", [""])[0]
-        
-        insecure_val = qs.get("insecure", [qs.get("allowInsecure", ["0"])])[0]
-        is_insecure = True if insecure_val in ["1", "true", "True", "anauthorized"] else False
-        sni_val = qs.get("sni", [parsed.hostname])[0]
-        congestion_val = qs.get("congestion_control", [qs.get("cc", ["bbr"])])[0]
-
-        out["tls"] = {
-            "enabled": True,
-            "server_name": sni_val,
-            "insecure": is_insecure
-        }
-        out["congestion_control"] = congestion_val
     else:
         out = None
 except Exception as e:
