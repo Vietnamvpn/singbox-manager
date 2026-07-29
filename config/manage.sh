@@ -20,6 +20,69 @@ function check_and_restart() {
     fi
 }
 
+function check_and_manage_port() {
+    echo -e "${BLUE}====================================================${NC}"
+    read -p "Nhập port cần kiểm tra: " port_num
+    if [[ ! "$port_num" =~ ^[0-9]+$ ]] || [ "$port_num" -lt 1 ] || [ "$port_num" -gt 65535 ]; then
+        echo -e "${RED}Lỗi: Port không hợp lệ!${NC}"
+        return
+    fi
+
+    if command -v ufw >/dev/null 2>&1; then
+        FW_TYPE="ufw"
+    elif command -v firewall-cmd >/dev/null 2>&1; then
+        FW_TYPE="firewalld"
+    else
+        echo -e "${RED}Lỗi: Không tìm thấy ufw hoặc firewalld trên hệ thống.${NC}"
+        return
+    fi
+
+    is_open=0
+    if [ "$FW_TYPE" == "ufw" ]; then
+        if ufw status | grep -q -w "${port_num}"; then
+            is_open=1
+        fi
+    elif [ "$FW_TYPE" == "firewalld" ]; then
+        if firewall-cmd --list-ports | grep -q -w "${port_num}/tcp" || firewall-cmd --list-ports | grep -q -w "${port_num}/udp"; then
+            is_open=1
+        fi
+    fi
+
+    if [ "$is_open" -eq 1 ]; then
+        echo -e "${GREEN}Thông báo: Port $port_num hiện ĐANG MỞ.${NC}"
+        read -p "Bạn có muốn tắt (đóng) port này không? (y/n): " confirm
+        if [[ "$confirm" == "y" || "$confirm" == "Y" ]]; then
+            if [ "$FW_TYPE" == "ufw" ]; then
+                ufw delete allow ${port_num}/tcp >/dev/null 2>&1
+                ufw delete allow ${port_num}/udp >/dev/null 2>&1
+            elif [ "$FW_TYPE" == "firewalld" ]; then
+                firewall-cmd --permanent --remove-port=${port_num}/tcp >/dev/null 2>&1
+                firewall-cmd --permanent --remove-port=${port_num}/udp >/dev/null 2>&1
+                firewall-cmd --reload >/dev/null 2>&1
+            fi
+            echo -e "${GREEN}Đã đóng port $port_num (cả TCP và UDP).${NC}"
+        else
+            echo -e "${YELLOW}Đã bỏ qua, không tắt port.${NC}"
+        fi
+    else
+        echo -e "${RED}Thông báo: Port $port_num hiện CHƯA MỞ.${NC}"
+        read -p "Bạn có muốn mở port này không? (y/n): " confirm
+        if [[ "$confirm" == "y" || "$confirm" == "Y" ]]; then
+            if [ "$FW_TYPE" == "ufw" ]; then
+                ufw allow ${port_num}/tcp >/dev/null 2>&1
+                ufw allow ${port_num}/udp >/dev/null 2>&1
+            elif [ "$FW_TYPE" == "firewalld" ]; then
+                firewall-cmd --permanent --add-port=${port_num}/tcp >/dev/null 2>&1
+                firewall-cmd --permanent --add-port=${port_num}/udp >/dev/null 2>&1
+                firewall-cmd --reload >/dev/null 2>&1
+            fi
+            echo -e "${GREEN}Đã mở port $port_num (cả TCP và UDP).${NC}"
+        else
+            echo -e "${YELLOW}Đã bỏ qua, không mở port.${NC}"
+        fi
+    fi
+}
+
 function show_config_menu() {
     clear
     echo -e "${BLUE}====================================================${NC}"
@@ -30,9 +93,10 @@ function show_config_menu() {
     echo -e "${YELLOW} 3.${NC} Tối ưu mạng NAT VPS (Prefer IPv6)"
     echo -e "${YELLOW} 4.${NC} Sao lưu Cấu hình (Backup)"
     echo -e "${YELLOW} 5.${NC} Khôi phục Cấu hình (Restore)"
+    echo -e "${YELLOW} 6.${NC} Kiểm tra và quản lý Port (Tường lửa)"
     echo -e "${RED} 0.${NC} Quay lại Menu chính"
     echo -e "${BLUE}====================================================${NC}"
-    read -p "Vui lòng chọn chức năng (0-5): " cchoice
+    read -p "Vui lòng chọn chức năng (0-6): " cchoice
 
     case $cchoice in
         1)
@@ -108,6 +172,10 @@ function show_config_menu() {
                     check_and_restart
                 fi
             fi
+            read -p "Nhấn Enter để tiếp tục..." && show_config_menu
+            ;;
+        6)
+            check_and_manage_port
             read -p "Nhấn Enter để tiếp tục..." && show_config_menu
             ;;
         0)

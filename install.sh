@@ -22,6 +22,26 @@ else
     exit 1
 fi
 
+# 2.1. Cài đặt và cấu hình tường lửa theo Hệ điều hành nếu chưa có
+echo "Đang kiểm tra và cài đặt tường lửa..."
+if [ -x "$(command -v apt)" ]; then
+    if ! command -v ufw >/dev/null 2>&1; then
+        apt install -y ufw
+    fi
+    ufw allow 22/tcp >/dev/null 2>&1
+    ufw allow 2022/tcp >/dev/null 2>&1
+    ufw --force enable >/dev/null 2>&1
+elif [ -x "$(command -v yum)" ]; then
+    if ! command -v firewalld >/dev/null 2>&1; then
+        yum install -y firewalld
+    fi
+    systemctl start firewalld >/dev/null 2>&1
+    systemctl enable firewalld >/dev/null 2>&1
+    firewall-cmd --permanent --add-port=22/tcp >/dev/null 2>&1
+    firewall-cmd --permanent --add-port=2022/tcp >/dev/null 2>&1
+    firewall-cmd --reload >/dev/null 2>&1
+fi
+
 # 3. Tạo cấu trúc thư mục
 echo "Đang khởi tạo cấu trúc thư mục..."
 mkdir -p "$INSTALL_DIR"
