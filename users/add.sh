@@ -58,7 +58,7 @@ read -p "Nhập Domain hiển thị hoặc để trống: " NODE_DOMAIN
 read -p "Nhập SNI nếu có: " SNI
 
 echo -e "\n${YELLOW}Cấu hình Routing / Chain Node:${NC}"
-read -p "Nhập link Outbound proxy (vless://, vmess://, trojan://) hoặc để trống (trực tiếp qua VPS): " OUTBOUND_LINK
+read -p "Nhập link Outbound proxy (vless://, vmess://, trojan://, hysteria2://, tuic://) hoặc để trống (trực tiếp qua VPS): " OUTBOUND_LINK
 
 if [ -n "$NODE_DOMAIN" ]; then
     if ! jq --arg port "$PORT" --arg domain "$NODE_DOMAIN" '.[$port] = $domain' "$DOMAINS_FILE" > "${DOMAINS_FILE}.tmp"; then
@@ -132,7 +132,7 @@ try:
             out["password"] = parsed.username
         
         sec = qs.get("security", [""])[0]
-        fp = qs.get("fp", ["chrome"])[0] # Lấy fingerprint từ link, mặc định chrome nếu không có
+        fp = qs.get("fp", ["chrome"])[0]
         
         if sec == "tls":
             out["tls"] = {
@@ -183,6 +183,45 @@ try:
             out["transport"] = {"type": "ws", "path": v.get("path", "/"), "headers": {"Host": v.get("host", v.get("add"))}}
         elif net == "grpc":
             out["transport"] = {"type": "grpc", "service_name": v.get("path", "")}
+
+    elif link.startswith("hysteria2://") or link.startswith("hy2://"):
+        parsed = urllib.parse.urlparse(link)
+        qs = urllib.parse.parse_qs(parsed.query)
+        out["type"] = "hysteria2"
+        out["server"] = parsed.hostname
+        out["server_port"] = int(parsed.port)
+        out["password"] = parsed.username
+        
+        insecure_val = qs.get("insecure", ["0"])[0]
+        is_insecure = True if insecure_val in ["1", "true", "True"] else False
+        sni_val = qs.get("sni", [parsed.hostname])[0]
+        
+        out["tls"] = {
+            "enabled": True,
+            "server_name": sni_val,
+            "insecure": is_insecure
+        }
+
+    elif link.startswith("tuic://"):
+        parsed = urllib.parse.urlparse(link)
+        qs = urllib.parse.parse_qs(parsed.query)
+        out["type"] = "tuic"
+        out["server"] = parsed.hostname
+        out["server_port"] = int(parsed.port)
+        out["uuid"] = parsed.username
+        out["password"] = parsed.password if parsed.password else qs.get("password", [""])[0]
+        
+        insecure_val = qs.get("insecure", ["0"])[0]
+        is_insecure = True if insecure_val in ["1", "true", "True"] else False
+        sni_val = qs.get("sni", [parsed.hostname])[0]
+        congestion_val = qs.get("congestion_control", [qs.get("cc", ["bbr"])])[0]
+
+        out["tls"] = {
+            "enabled": True,
+            "server_name": sni_val,
+            "insecure": is_insecure
+        }
+        out["congestion_control"] = congestion_val
     else:
         out = None
 except Exception as e:
