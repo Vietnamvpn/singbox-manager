@@ -67,6 +67,7 @@ USERNAME="admin"
 read -p "Nhập Domain hiển thị hoặc để trống: " NODE_DOMAIN
 read -p "Nhập SNI nếu có: " SNI
 
+echo -e "${YELLOW}=====================================================================${NC}"
 echo -e "\n${YELLOW}Cấu hình Routing / Chain Node, nhập link (vless://, vmess://, trojan://) để trống sẽ kết nối trực tiếp qua VPS. ${NC}"
 read -p "Nhập link Outbound : " OUTBOUND_LINK
 
