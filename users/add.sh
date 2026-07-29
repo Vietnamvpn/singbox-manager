@@ -57,22 +57,6 @@ USERNAME="admin"
 read -p "Nhập Domain hiển thị hoặc để trống: " NODE_DOMAIN
 read -p "Nhập SNI nếu có: " SNI
 
-echo -e "\n${YELLOW}Chọn chiến lược mạng IP đầu ra (Domain Strategy):${NC}"
-echo "1. Mặc định (Cả IPv4 & IPv6)"
-echo "2. Ưu tiên IPv4"
-echo "3. Ưu tiên IPv6"
-echo "4. Chỉ xuất ra IPv4"
-echo "5. Chỉ xuất ra IPv6"
-read -p "Lựa chọn (1-5) [Mặc định: 1]: " ip_choice
-
-case $ip_choice in
-    2) STRATEGY="prefer_ipv4" ;;
-    3) STRATEGY="prefer_ipv6" ;;
-    4) STRATEGY="ipv4_only" ;;
-    5) STRATEGY="ipv6_only" ;;
-    *) STRATEGY="" ;;
-esac
-
 echo -e "\n${YELLOW}Cấu hình Routing / Chain Node:${NC}"
 read -p "Nhập link Outbound proxy (vless://, vmess://, trojan://) hoặc để trống (trực tiếp qua VPS): " OUTBOUND_LINK
 
@@ -207,13 +191,11 @@ fi
 if ! jq --argjson new_inbound "$NEW_INBOUND" \
    --argjson new_outbound "$NEW_OUTBOUND" \
    --argjson new_rule "$NEW_ROUTE_RULE" \
-   --arg strategy "$STRATEGY" \
    '.inbounds += [$new_inbound] | 
     if $new_outbound != null then .outbounds += [$new_outbound] else . end | 
     if .route == null then .route = {"rules":[]} else . end | 
     if .route.rules == null then .route.rules = [] else . end | 
-    if $new_rule != null then .route.rules = [$new_rule] + .route.rules else . end | 
-    if $strategy != "" then .route.domain_strategy = $strategy else . end' "$CONFIG_FILE" > "${CONFIG_FILE}.tmp"; then
+    if $new_rule != null then .route.rules = [$new_rule] + .route.rules else . end' "$CONFIG_FILE" > "${CONFIG_FILE}.tmp"; then
     echo -e "${RED}Lỗi: Cập nhật config.json thất bại. Kiểm tra lại cú pháp JSON của tệp mẫu.${NC}"
     exit 1
 fi
@@ -246,7 +228,6 @@ if [ -n "$OUTBOUND_LINK" ] && [ "$NEW_OUTBOUND" != "null" ]; then
 else
     echo -e "Outbound  : Trực tiếp (Direct)"
 fi
-[ -n "$STRATEGY" ] && echo -e "IP Ưu tiên: $STRATEGY"
 [[ "$PROTO" == "vless" || "$PROTO" == "tuic" ]] && echo -e "UUID      : $UUID"
 [[ "$PROTO" == "hysteria2" || "$PROTO" == "tuic" ]] && echo -e "Password  : $PASSWORD"
 if [ "$PROTO" == "vless" ]; then
