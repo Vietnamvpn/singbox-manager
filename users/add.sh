@@ -132,12 +132,20 @@ try:
             out["password"] = parsed.username
         
         sec = qs.get("security", [""])[0]
+        fp = qs.get("fp", ["chrome"])[0] # Lấy fingerprint từ link, mặc định chrome nếu không có
+        
         if sec == "tls":
-            out["tls"] = {"enabled": True, "server_name": qs.get("sni", [parsed.hostname])[0], "insecure": False}
+            out["tls"] = {
+                "enabled": True, 
+                "server_name": qs.get("sni", [parsed.hostname])[0], 
+                "insecure": False,
+                "utls": {"enabled": True, "fingerprint": fp}
+            }
         elif sec == "reality":
             out["tls"] = {
                 "enabled": True, 
                 "server_name": qs.get("sni", [parsed.hostname])[0],
+                "utls": {"enabled": True, "fingerprint": fp},
                 "reality": {
                     "enabled": True,
                     "public_key": qs.get("pbk", [""])[0],
@@ -163,7 +171,12 @@ try:
         out["alter_id"] = int(v.get("aid", 0))
         
         if str(v.get("tls")) == "tls":
-            out["tls"] = {"enabled": True, "server_name": str(v.get("sni", [v.get("add")])[0]), "insecure": False}
+            out["tls"] = {
+                "enabled": True, 
+                "server_name": str(v.get("sni", [v.get("add")])[0]), 
+                "insecure": False,
+                "utls": {"enabled": True, "fingerprint": "chrome"}
+            }
             
         net = str(v.get("net", "tcp"))
         if net == "ws":
